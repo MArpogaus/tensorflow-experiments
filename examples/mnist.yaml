@@ -1,0 +1,12 @@
+experiment_name: MNIST
+model: !!python/name:mnist_model.model
+data: !!python/name:tensorflow.python.keras.datasets.mnist
+compile_kwargs:
+  loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
+    kwds: {from_logits: true}
+  metrics:
+  - accuracy
+  optimizer: adam
+fit_kwargs:
+  epochs: 5
+save_path: ./logs/MNIST

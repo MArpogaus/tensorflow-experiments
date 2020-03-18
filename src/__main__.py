@@ -1,39 +1,21 @@
+import yaml
 import argparse
 import tensorflow as tf
 from .configuration import Configuration
 
 
 def f_train(args):
+    cfg = Configuration.from_yaml(args.config)
 
-    #cfg = Configuration.from_yaml(args.config)
-    mnist = tf.keras.datasets.mnist
-
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    x_train, x_test = x_train / 255.0, x_test / 255.0
-
-    cfg = Configuration(
-        experiment_name='MNIST',
-        model=tf.keras.models.Sequential([
-            tf.keras.layers.Flatten(input_shape=(28, 28)),
-            tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(10)
-        ]),
-        # model_args,
-        # model_kwargs,
-        model_compile_kwargs=dict(optimizer='adam',
-                                  loss=tf.keras.losses.SparseCategoricalCrossentropy(
-                                      from_logits=True),
-                                  metrics=['accuracy']),
-        model_fit_kwargs=dict(x=x_train, y=y_train, epochs=5),
-        save_path='./logs')
     print(cfg)
 
+    (x_train, y_train), (x_test, y_test) = cfg.data.load_data()
+    x_train, x_test = x_train / 255.0, x_test / 255.0
+
     model = cfg.model
-
-    model.compile(**cfg.model_compile_kwargs)
-
-    model.fit(**cfg.model_fit_kwargs)
+    #cfg.compile_kwargs['loss']=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+    model.compile(**cfg.compile_kwargs)
+    model.fit(x=x_train, y=y_train, **cfg.fit_kwargs)
 
 
 def f_predict():

@@ -2,13 +2,15 @@
 # @Author: marcel
 # @Date:   2020-03-17 13:17:31
 # @Last Modified by:   marcel
-# @Last Modified time: 2020-03-17 20:30:58
+# @Last Modified time: 2020-03-18 18:40:31
 import io
 import os
 import yaml
 import shutil
 
 import tensorflow as tf
+
+from typing import Callable
 
 
 def frmt(key, value, width=80):
@@ -25,31 +27,35 @@ def frmt(key, value, width=80):
             s += frmt(key + '.' + k, value[k], width)
         return s
     else:
-        return "| {: <22}: {}".format(key, value).ljust(width - 1) + '|\n'
+        return "| {: <25}: {}".format(key, value).ljust(width - 1) + '|\n'
 
 
-class Configuration(object):
+class Configuration():
     """docstring for Configuration"""
 
     def __init__(self,
                  model: tf.keras.Model,
+                 data: tuple,
                  experiment_name: str = "unnamed-experiment",
                  model_args: list = None,
                  model_kwargs: dict = None,
-                 model_compile_kwargs: dict = None,
-                 model_fit_kwargs: dict = None,
+                 compile_kwargs: dict = None,
+                 fit_kwargs: dict = None,
                  save_path: str = './logs'):
 
         # Common --------------------------------------------------------------
         self.experiment_name = experiment_name
         self.save_path = os.path.join(save_path, self.experiment_name)
 
-        # Model Configuration -------------------------------------------------
+        # Model ---------------------------------------------------------------
         self.model = model
-        self.model_args = model_args
-        self.model_kwargs = model_kwargs
-        self.model_compile_kwargs = model_compile_kwargs
-        self.model_fit_kwargs = model_fit_kwargs
+
+        # Dataset -------------------------------------------------------------
+        self.data = data
+
+        # Training ------------------------------------------------------------
+        self.compile_kwargs = compile_kwargs
+        self.fit_kwargs = fit_kwargs
 
     def __str__(self)->str:
         """Display Configuration values."""
@@ -59,9 +65,9 @@ class Configuration(object):
         for a in dir(self):
             if not a.startswith("__") and not callable(getattr(self, a)):
                 attr.append((a, getattr(self, a)))
-        return f"{f'+--[ Configuration ]'.ljust(width - 2,'-') + '+'}\n" \
+        return f"{f'+--[ Configuration ]'.ljust(width - 1,'-') + '+'}\n" \
                f"{''.join(map(lambda x:frmt(x[0],x[1],width),attr))}"\
-               f"{'+' + '-'*(width - 2) + '+'}"
+               f"{'+' + '-'*(width - 1) + '+'}"
 
     @classmethod
     def from_yaml(cls, configuration_file: io.TextIOWrapper):
