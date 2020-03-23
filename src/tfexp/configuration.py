@@ -2,15 +2,13 @@
 # @Author: marcel
 # @Date:   2020-03-17 13:17:31
 # @Last Modified by:   marcel
-# @Last Modified time: 2020-03-18 18:40:31
+# @Last Modified time: 2020-03-19 10:05:57
 import io
 import os
 import yaml
 import shutil
 
 import tensorflow as tf
-
-from typing import Callable
 
 
 def frmt(key, value, width=80):

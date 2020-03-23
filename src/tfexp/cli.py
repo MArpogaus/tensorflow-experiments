@@ -1,6 +1,4 @@
-import yaml
 import argparse
-import tensorflow as tf
 from .configuration import Configuration
 
 
@@ -13,7 +11,7 @@ def f_train(args):
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
     model = cfg.model
-    #cfg.compile_kwargs['loss']=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+    # cfg.compile_kwargs['loss']=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
     model.compile(**cfg.compile_kwargs)
     model.fit(x=x_train, y=y_train, **cfg.fit_kwargs)
 
@@ -22,7 +20,7 @@ def f_predict():
     pass
 
 
-if __name__ == '__main__':
+def cli():
     p = argparse.ArgumentParser(
         description='Help me to conduct my experiments')
     subparsers = p.add_subparsers()
