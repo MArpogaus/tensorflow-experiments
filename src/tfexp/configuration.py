@@ -33,29 +33,31 @@ class Configuration():
 
     def __init__(self,
                  model: tf.keras.Model,
-                 data: tuple,
+                 data: object,
+                 seed: int,
                  experiment_name: str = "unnamed-experiment",
-                 model_args: list = None,
-                 model_kwargs: dict = None,
-                 compile_kwargs: dict = None,
-                 fit_kwargs: dict = None,
-                 save_path: str = './logs'):
+                 model_args: list = [],
+                 model_kwds: dict = {},
+                 data_kwds: dict = {},
+                 compile_kwds: dict = {},
+                 fit_kwds: dict = {}):
 
         # Common --------------------------------------------------------------
         self.experiment_name = experiment_name
-        self.save_path = os.path.join(save_path, self.experiment_name)
+        self.seed = seed
 
         # Model ---------------------------------------------------------------
         self.model = model
 
         # Dataset -------------------------------------------------------------
         self.data = data
+        self.data_kwds = data_kwds
 
         # Training ------------------------------------------------------------
-        self.compile_kwargs = compile_kwargs
-        self.fit_kwargs = fit_kwargs
+        self.compile_kwds = compile_kwds
+        self.fit_kwds = fit_kwds
 
-    def __str__(self)->str:
+    def __repr__(self)->str:
         """Display Configuration values."""
         width = shutil.get_terminal_size((80, 20)).columns
 
@@ -65,7 +67,7 @@ class Configuration():
                 attr.append((a, getattr(self, a)))
         return f"{f'+--[ Configuration ]'.ljust(width - 1,'-') + '+'}\n" \
                f"{''.join(map(lambda x:frmt(x[0],x[1],width),attr))}"\
-               f"{'+' + '-'*(width - 1) + '+'}"
+               f"{'+' + '-'*(width - 2) + '+'}"
 
     @classmethod
     def from_yaml(cls, configuration_file: io.TextIOWrapper):

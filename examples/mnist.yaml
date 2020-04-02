@@ -7,6 +7,6 @@ compile_kwargs:
   metrics:
   - accuracy
   optimizer: adam
-fit_kwargs:
+fit_kwds:
   epochs: 5
 save_path: ./logs/MNIST
