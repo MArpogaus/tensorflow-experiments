@@ -26,7 +26,7 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:23:50
+# modified time : 2020-04-06 19:27:02
 #  changes made : ...
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 15:23:11
@@ -38,6 +38,7 @@ from tensorflow.python.data.ops import iterator_ops
 
 from sklearn.model_selection import train_test_split
 
+from . import utils
 from .configuration import Configuration
 
 
