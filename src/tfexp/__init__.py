@@ -26,8 +26,8 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 19:27:02
-#  changes made : ...
+# modified time : 2020-04-07 16:33:09
+#  changes made : return configuration and data
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 15:23:11
 #  changes made : newly written
@@ -82,8 +82,13 @@ def train(args):
 
         fit_kwds = dict(x=train_x,
                         y=train_y)
+
         if val_x is not None:
             fit_kwds['validation_data'] = (val_x, val_y)
+            train_data = (train_x, val_x, train_y, val_y)
+        else:
+            train_data = (train_x, train_y)
+        test_data = (test_x, test_y)
 
     elif isinstance(data, (dataset_ops.DatasetV1,
                            dataset_ops.DatasetV2,
@@ -91,7 +96,15 @@ def train(args):
         fit_kwds = dict(x=data)
 
         if cfg.validation_split is not None:
-            fit_kwds['validation_split'] = cfg.validation_split
+            ValueError(
+                f'validation_split not supported with type(data)={type(data)}')
+
+        if cfg.cross_validation is not None:
+            ValueError(
+                f'cross_validation not supported with type(data)={type(data)}')
+
+        train_data = data
+        test_data = None
 
     else:
         raise ValueError(f"Dataset type '{type(data)}' unsupported")
@@ -139,7 +152,7 @@ def train(args):
     if test_x is not None:
         model.evaluate(test_x, test_y)
 
-    return history
+    return history, cfg, train_data, test_data
 
 
 def predict():
