@@ -26,7 +26,7 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-08 07:54:51
+# modified time : 2020-04-08 19:07:45
 #  changes made : ...
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 14:47:58
@@ -66,7 +66,7 @@ class Configuration():
                  model: tf.keras.Model,
                  data: object,
                  seed: int,
-                 save_path: str = "./unnamed-experiment",
+                 dump_cfg_path: str = None,
                  model_args: list = [],
                  model_kwds: dict = {},
                  data_kwds: dict = {},
@@ -74,11 +74,11 @@ class Configuration():
                  fit_kwds: dict = {},
                  cross_validation: callable = None,
                  data_preprocessor: callable = None,
-                 validation_split: float = None):
+                 **kwds):
 
         # Common --------------------------------------------------------------
-        self.save_path = save_path
         self.seed = seed
+        self.dump_cfg_path = dump_cfg_path
 
         # Model ---------------------------------------------------------------
         self.model = model
@@ -87,7 +87,6 @@ class Configuration():
         self.data = data
         self.data_kwds = data_kwds
         self.data_preprocessor = data_preprocessor
-        self.validation_split = validation_split
 
         # Training ------------------------------------------------------------
         self.compile_kwds = compile_kwds

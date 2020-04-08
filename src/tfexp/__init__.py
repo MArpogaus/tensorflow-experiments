@@ -26,17 +26,20 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
+# modified time : 2020-04-08 19:00:30
+#  changes made : added support for data organized in dict
+# modified by   : Marcel Arpogaus
 # modified time : 2020-04-08 07:58:38
 #  changes made : return configuration and data
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 15:23:11
 #  changes made : newly written
 ###############################################################################
+import os
+
 import tensorflow as tf
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops import iterator_ops
-
-from sklearn.model_selection import train_test_split
 
 from . import utils
 from .configuration import Configuration
@@ -57,19 +60,23 @@ def train(args):
 
     # LOAD DATA ###############################################################
     data = cfg.data.load_data(**cfg.data_kwds)
-    if type(data) is tuple:
-        train_x, train_y = data[0]
-        val_x, val_y = None, None
-        test_x, test_y = data[1]
-        # VALIDATION DATA #####################################################
-        if cfg.validation_split is not None:
-            print(f'splitting of {cfg.validation_split*100:.2f}% '
-                  'as validation data')
-            train_x, val_x, train_y, val_y = train_test_split(
-                train_x, train_y,
-                test_size=cfg.validation_split,
-                shuffle=True,
-                random_state=cfg.seed)
+
+    if isinstance(data, tuple):
+        if isinstance(data[0], dict) and isinstance(data[1], dict):
+            train_x, train_y = data[0]['train'], data[1]['train']
+            test_x, test_y = data[0]['test'], data[1]['test']
+            val_x, val_y = data[0].get(
+                'validate', None), data[1].get('validate', None)
+        elif len(data) == 2:
+            train_x, train_y = data[0]
+            test_x, test_y = data[1]
+            val_x, val_y = None, None
+        elif len(data) == 3:
+            train_x, train_y = data[0]
+            test_x, test_y = data[1]
+            val_x, val_y = data[2]
+        else:
+            raise ValueError(f"unexpected structure of dataset")
 
         # NORMALIZATION #######################################################
         if cfg.data_preprocessor is not None:
@@ -96,10 +103,6 @@ def train(args):
                            dataset_ops.DatasetV2,
                            iterator_ops.Iterator)):
         fit_kwds = dict(x=data)
-
-        if cfg.validation_split is not None:
-            ValueError(
-                f'validation_split not supported with type(data)={type(data)}')
 
         if cfg.cross_validation is not None:
             ValueError(
@@ -149,10 +152,6 @@ def train(args):
     else:
         # FIT MODEL ###########################################################
         history = model.fit(**fit_kwds, **cfg.fit_kwds)
-
-    # EVALUATE ################################################################
-    if test_x is not None:
-        model.evaluate(test_x, test_y)
 
     return history, cfg, train_data, test_data
 

@@ -24,10 +24,11 @@ def join(loader, node):
     return ''.join([str(i) for i in seq])
 
 
-def reference(loader, node):
+def include(loader, node):
     path = loader.construct_scalar(node)
     with open(path, 'r') as yf:
         ref = yaml.load(yf, Loader=loader.__class__)
+
     return ref
 
 
@@ -35,4 +36,4 @@ yaml.add_constructor('!datetime_path', date_time_path_formatter)
 yaml.add_constructor('!product', np_product)
 yaml.add_constructor('!sum', np_sum)
 yaml.add_constructor('!join', join)
-yaml.add_constructor('!ref', reference)
+yaml.add_constructor('!include', include)

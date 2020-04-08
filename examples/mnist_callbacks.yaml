@@ -30,5 +30,5 @@ fit_kwds:
   shuffle: True
   validation_split: 0.1
   callbacks:
-    !ref callbacks.yaml
+    !include callbacks.yaml
 
