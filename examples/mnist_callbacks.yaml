@@ -1,30 +1,3 @@
-# TensorFlow Experiments
-
-A straight-forward framework to run
-[TensorFlow](https://tensorflow.org)
-experiments described in
-[YAML](https://yaml.org/)
-files.
-
-## Install
-
-**The packages is not released to PyPI, but feel free to clone it from this repo if your interested**
-
-Use the
-[pip package manger](https://www.tensorflow.org/install/pip)
-to install the 
-
-```
-$ pip install git+https://github.com/MArpogaus/tensorflow-experiments.git
-```
-
-## MNIST Example
-
-in `./examples` you can find the minimal working example using the
-[MNIST dataset](https://www.tensorflow.org/api_docs/python/tf/keras/datasets/mnist/load_data)
-of handwrite digits
-
-```yaml
 seed: 42
 
 model: !!python/object/apply:tensorflow.keras.models.Sequential
@@ -47,15 +20,15 @@ compile_kwds:
     kwds: {from_logits: true}
   metrics:
   - accuracy
-  optimizer: adam
+  optimizer: !!python/object/apply:tensorflow.keras.optimizers.Adam
+    kwds:
+      lr: 0.001
 
 fit_kwds:
-  epochs: 5
+  epochs: 20
+  batch_size: 32
   shuffle: True
   validation_split: 0.1
+  callbacks:
+    !ref callbacks.yaml
 
-```
-
-## License
-
-[Apache License 2.0](LICENSE)

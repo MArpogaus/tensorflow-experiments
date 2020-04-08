@@ -26,7 +26,7 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-07 16:33:09
+# modified time : 2020-04-08 07:58:38
 #  changes made : return configuration and data
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 15:23:11
@@ -59,15 +59,17 @@ def train(args):
     data = cfg.data.load_data(**cfg.data_kwds)
     if type(data) is tuple:
         train_x, train_y = data[0]
+        val_x, val_y = None, None
         test_x, test_y = data[1]
-
         # VALIDATION DATA #####################################################
         if cfg.validation_split is not None:
             print(f'splitting of {cfg.validation_split*100:.2f}% '
                   'as validation data')
             train_x, val_x, train_y, val_y = train_test_split(
                 train_x, train_y,
-                test_size=cfg.validation_split, shuffle=False)
+                test_size=cfg.validation_split,
+                shuffle=True,
+                random_state=cfg.seed)
 
         # NORMALIZATION #######################################################
         if cfg.data_preprocessor is not None:

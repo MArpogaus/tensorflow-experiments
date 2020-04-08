@@ -1,12 +1,28 @@
-experiment_name: MNIST
-model: !!python/name:mnist_model.model
+seed: 42
+
+model: !!python/object/apply:tensorflow.keras.models.Sequential
+  args:
+    - !!python/list
+      - !!python/object/apply:tensorflow.keras.layers.Flatten
+        kwds: {input_shape: !!python/tuple [28, 28]}
+      - !!python/object/apply:tensorflow.keras.layers.Dense
+        args: [128]
+        kwds: {activation: relu}
+      - !!python/object/apply:tensorflow.keras.layers.Dropout
+        args: [0.2]
+      - !!python/object/apply:tensorflow.keras.layers.Dense
+        args: [10]
+
 data: !!python/name:tensorflow.python.keras.datasets.mnist
-compile_kwargs:
+
+compile_kwds:
   loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
     kwds: {from_logits: true}
   metrics:
   - accuracy
   optimizer: adam
+
 fit_kwds:
   epochs: 5
-save_path: ./logs/MNIST
+  shuffle: True
+  validation_split: 0.1
