@@ -13,7 +13,7 @@ model: !!python/object/apply:tensorflow.keras.models.Sequential
       - !!python/object/apply:tensorflow.keras.layers.Dense
         args: [10]
 
-data_loader: !!python/name:tensorflow.python.keras.datasets.mnist.load_data
+data: !!python/object/apply:tensorflow.python.keras.datasets.mnist.load_data []
 
 compile_kwds:
   loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
@@ -23,5 +23,6 @@ compile_kwds:
 
 fit_kwds:
   epochs: 5
+  batch_size: 32
   shuffle: True
   validation_split: 0.1

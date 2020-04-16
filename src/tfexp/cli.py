@@ -26,7 +26,7 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:24:14
+# modified time : 2020-04-16 22:04:09
 #  changes made : ...
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 15:21:06
@@ -36,8 +36,7 @@
 # REQUIRED PYTHON MODULES #####################################################
 import argparse
 
-from . import utils
-from . import train, predict
+from . import train, test, predict
 
 
 def cli():
@@ -46,20 +45,14 @@ def cli():
     subparsers = p.add_subparsers()
 
     train_parser = subparsers.add_parser('train', help='train the model')
-    # Add specific options for option1 here, but here's
     train_parser.add_argument('config', type=argparse.FileType(mode='r'))
-    # train_parser.add_argument('--model', type=tf.keras.Model)
-    # train_parser.add_argument('--experiment_name', type=str)
-    # train_parser.add_argument('--model_args', type=list)
-    # train_parser.add_argument('--model_kwds', type=dict)
-    # train_parser.add_argument('--model_compile_kwds', type=dict)
-    # train_parser.add_argument('--model_fit_kwds', type=dict)
-    # train_parser.add_argument('--save_path', type=str)
-    # an example
     train_parser.set_defaults(func=train)
 
+    test_parser = subparsers.add_parser('test', help='test the model')
+    test_parser.add_argument('config', type=argparse.FileType(mode='r'))
+    test_parser.set_defaults(func=test)
+
     predict_parser = subparsers.add_parser('predict')
-    # Add specific options for option1 here
     predict_parser.set_defaults(func=predict)
 
     args = p.parse_args()

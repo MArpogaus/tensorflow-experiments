@@ -1,6 +1,6 @@
 - !!python/object/apply:tensorflow.keras.callbacks.ModelCheckpoint
   kwds:
-    filepath: !join [&base_path !datetime_path './logs/{now:%Y%m%d-%H%M%S}_MNIST', '/mcp.hdf5']
+    filepath: !join [$base_path, !datetime '/mcp/{now:%Y%m%d-%H%M%S}']
     monitor:  val_loss
     mode: auto
     verbose: 0
@@ -8,7 +8,7 @@
     save_weights_only: true
 - !!python/object/apply:tensorflow.keras.callbacks.TensorBoard
   kwds:
-    log_dir: !join [*base_path, /tb]
+    log_dir: !join [$base_path, /tb]
     write_graph: true
     update_freq: epoch
 - !!python/object/apply:tensorflow.keras.callbacks.EarlyStopping
@@ -27,5 +27,5 @@
       min_lr: 0.00001
 - !!python/object/apply:tensorflow.keras.callbacks.CSVLogger
     kwds:
-      filename: !join [*base_path, !datetime_path '/{now:%Y%m%d-%H%M%S}_MNIST.csv']
+      filename: !join [$base_path, !datetime '/{now:%Y%m%d-%H%M%S}.log']
       append: false

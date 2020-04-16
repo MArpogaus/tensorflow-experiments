@@ -26,8 +26,8 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-16 11:33:53
-#  changes made : added load_data function for data preprocessing
+# modified time : 2020-04-16 23:00:51
+#  changes made : added load_data function for data preprocessing;
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-06 14:47:58
 #  changes made : newly written
@@ -36,12 +36,14 @@
 # REQUIRED PYTHON MODULES #####################################################
 import io
 import yaml
-import shutil
 
 import tensorflow as tf
 
 from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
 from tensorflow.python.data.ops.iterator_ops import Iterator
+from pprint import pformat
+
+from .utils import ExtendedLoader
 
 
 def frmt(key, value, width=80):
@@ -66,55 +68,53 @@ class Configuration():
 
     def __init__(self,
                  model: tf.keras.Model,
-                 data_loader: callable,
+                 data: callable,
                  seed: int,
-                 dump_cfg_path: str = None,
-                 model_args: list = [],
-                 model_kwds: dict = {},
-                 data_kwds: dict = {},
-                 compile_kwds: dict = {},
-                 fit_kwds: dict = {},
+                 model_checkpoints: str = None,
                  data_preprocessor: callable = None,
-                 **kwds):
+                 fit_kwds: dict = {},
+                 compile_kwds: dict = {},
+                 evaluate_kwds: dict = {}):
 
-        # Common --------------------------------------------------------------
+        # COMMON ##############################################################
         self.seed = seed
-        self.dump_cfg_path = dump_cfg_path
 
-        # Model ---------------------------------------------------------------
+        # MODEL ###############################################################
         self.model = model
+        self.model_checkpoints = model_checkpoints
 
-        # Dataset -------------------------------------------------------------
-        self.data_loader = data_loader
-        self.data_kwds = data_kwds
+        # DATASET #############################################################
+        self.data = data
         self.data_preprocessor = data_preprocessor
 
-        # Training ------------------------------------------------------------
-        self.compile_kwds = compile_kwds
+        # KERAS ###############################################################
         self.fit_kwds = fit_kwds
+        self.compile_kwds = compile_kwds
+        self.evaluate_kwds = evaluate_kwds
 
     def __repr__(self)->str:
         """Display Configuration values."""
-        width = shutil.get_terminal_size((80, 20)).columns
+        def format(x):
+            return f'  {x[0]}={pformat(x[1],indent=4)}'
 
         attr = []
         for a in dir(self):
             if not a.startswith("__") and not callable(getattr(self, a)):
                 attr.append((a, getattr(self, a)))
-        return f"{f'+--[ Configuration ]'.ljust(width - 1,'-') + '+'}\n" \
-               f"{''.join(map(lambda x:frmt(x[0],x[1],width),attr))}"\
-               f"{'+' + '-'*(width - 2) + '+'}"
+        return self.__class__.__name__ + '(\n' + \
+            ',\n'.join(map(format, attr)) + \
+            "\n)"
 
     @classmethod
     def from_yaml(cls, configuration_file: io.TextIOWrapper):
-        config = yaml.load(configuration_file, Loader=yaml.Loader)
+        config = yaml.load(configuration_file, Loader=ExtendedLoader)
         return Configuration(**config)
 
     def to_yaml(self, configuration_file: io.TextIOWrapper):
         yaml.dump(self, Dumper=yaml.Dumper)
 
     def load_data(self):
-        data = self.data_loader(**self.data_kwds)
+        data = self.data
 
         # DATA FORMAT #########################################################
         if isinstance(data, tuple):
