@@ -26,6 +26,9 @@
 #
 # CHANGELOG ##################################################################
 # modified by   : Marcel Arpogaus
+# modified time : 2020-04-16 11:30:32
+#  changes made : refactoring and cleaning
+# modified by   : Marcel Arpogaus
 # modified time : 2020-04-08 19:00:30
 #  changes made : added support for data organized in dict
 # modified by   : Marcel Arpogaus
@@ -35,11 +38,7 @@
 # modified time : 2020-04-06 15:23:11
 #  changes made : newly written
 ###############################################################################
-import os
-
 import tensorflow as tf
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.ops import iterator_ops
 
 from . import utils
 from .configuration import Configuration
@@ -59,101 +58,26 @@ def train(args):
     tf.random.set_seed(cfg.seed)
 
     # LOAD DATA ###############################################################
-    data = cfg.data.load_data(**cfg.data_kwds)
-
-    if isinstance(data, tuple):
-        if isinstance(data[0], dict) and isinstance(data[1], dict):
-            train_x, train_y = data[0]['train'], data[1]['train']
-            test_x, test_y = data[0]['test'], data[1]['test']
-            val_x, val_y = data[0].get(
-                'validate', None), data[1].get('validate', None)
-        elif len(data) == 2:
-            train_x, train_y = data[0]
-            test_x, test_y = data[1]
-            val_x, val_y = None, None
-        elif len(data) == 3:
-            train_x, train_y = data[0]
-            test_x, test_y = data[1]
-            val_x, val_y = data[2]
-        else:
-            raise ValueError(f"unexpected structure of dataset")
-
-        # NORMALIZATION #######################################################
-        if cfg.data_preprocessor is not None:
-            print(f'preprocessing data')
-            dp = cfg.data_preprocessor
-            dp.fit(train_x, train_y)
-            test_x, test_y = dp.transform(test_x, test_y)
-            if cfg.cross_validation is None:
-                train_x, train_y = dp.transform(train_x, train_y)
-            if val_x is not None:
-                val_x, val_y = dp.transform(val_x, val_y)
-
-        fit_kwds = dict(x=train_x,
-                        y=train_y)
-
-        if val_x is not None:
-            fit_kwds['validation_data'] = (val_x, val_y)
-            train_data = (train_x, val_x, train_y, val_y)
-        else:
-            train_data = (train_x, train_y)
-        test_data = (test_x, test_y)
-
-    elif isinstance(data, (dataset_ops.DatasetV1,
-                           dataset_ops.DatasetV2,
-                           iterator_ops.Iterator)):
-        fit_kwds = dict(x=data)
-
-        if cfg.cross_validation is not None:
-            ValueError(
-                f'cross_validation not supported with type(data)={type(data)}')
-
-        train_data = data
-        test_data = None
-
+    data = cfg.load_data()
+    if isinstance(data['train'], tuple):
+        # Data format: (train_x, train_y)
+        fit_kwds = dict(x=data['train'][0],
+                        y=data['train'][1],
+                        validation_data=data['validate'])
     else:
-        raise ValueError(f"Dataset type '{type(data)}' unsupported")
+        # Data format: dataset / generator or unsupervised
+        fit_kwds = dict(x=data['train'],
+                        validation_data=data['validate'])
 
+    # COMPILE MODEL ###########################################################
     model = cfg.model
     model.compile(**cfg.compile_kwds)
     model.summary()
 
     # TRAIN ###################################################################
-    if cfg.cross_validation is not None:
-        cv = cfg.cross_validation
-        epoch = 0
-        history = {}
-        for i, (train_idx, val_idx) in enumerate(cv.split(X=train_x)):
-            train_x_cv = train_x[train_idx]
-            train_y_cv = train_y[train_idx]
-            val_x_cv = train_x[val_idx]
-            val_y_cv = train_y[val_idx]
+    history = model.fit(**fit_kwds, **cfg.fit_kwds)
 
-            # NORMALIZATION ###################################################
-            if cfg.data_preprocessor is not None:
-                print(f'preprocessing data')
-                dp = cfg.data_preprocessor
-                train_x_cv, train_y_cv = dp.fit_transform(train_x_cv.copy(),
-                                                          train_y_cv.copy())
-                val_x_cv, val_y_cv = dp.transform(val_x_cv.copy(),
-                                                  val_y_cv.copy())
-
-            # FIT MODEL #######################################################
-            print(f'CV iteration {i}')
-            h = model.fit(
-                x=train_x_cv,
-                y=train_y_cv,
-                validation_data=(val_x_cv, val_y_cv),
-                initial_epoch=epoch,
-                **cfg.fit_kwds)
-            history[i] = h
-            epoch = max(h.epoch + [0]) + 1
-
-    else:
-        # FIT MODEL ###########################################################
-        history = model.fit(**fit_kwds, **cfg.fit_kwds)
-
-    return history, cfg, train_data, test_data
+    return history, cfg, data
 
 
 def predict():
