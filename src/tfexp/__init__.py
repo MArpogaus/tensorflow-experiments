@@ -26,7 +26,7 @@
 #
 # CHANGELOG ###################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-17 10:33:35
+# modified time : 2020-04-17 14:20:15
 #  changes made : added test routine
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-16 11:30:32
@@ -62,8 +62,9 @@ def build_model(cfg):
             cp = tf.train.latest_checkpoint(cfg.model_checkpoints)
 
         # Load model
-        print(f'restoring model from checkpoint {cp}')
-        model.load_weights(cp)
+        if cp is not None:
+            print(f'restoring model from checkpoint {cp}')
+            model.load_weights(cp)
 
     return model
 
