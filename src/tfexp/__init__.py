@@ -26,7 +26,7 @@
 #
 # CHANGELOG ###################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-16 23:01:57
+# modified time : 2020-04-17 10:33:35
 #  changes made : added test routine
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-16 11:30:32
@@ -47,21 +47,7 @@ import tensorflow as tf
 from .configuration import Configuration
 
 
-def _prepare(args):
-    if type(args) is str:
-        cfg_file = open(args, 'r')
-    else:
-        cfg_file = args.config
-    cfg = Configuration.from_yaml(cfg_file)
-    cfg_file.close()
-
-    # SEED ####################################################################
-    # Set seed to ensure reproducibility
-    tf.random.set_seed(cfg.seed)
-
-    # LOAD DATA ###############################################################
-    data = cfg.load_data()
-
+def build_model(cfg):
     # COMPILE MODEL ###########################################################
     model = cfg.model
     model.compile(**cfg.compile_kwds)
@@ -69,18 +55,37 @@ def _prepare(args):
     # LOAD CHECKPOINT #########################################################
     # ref: https://www.tensorflow.org/tutorials/keras/save_and_load
     if os.path.exists(cfg.model_checkpoints):
-        # get path to latest checkpoint
-        latest_cp = tf.train.latest_checkpoint(cfg.model_checkpoints)
-        # Load model
-        print(f'restoring model from checkpoint {latest_cp}')
-        model.load_weights(latest_cp)
-        # Finding the epoch index from which we are resuming
+        if os.path.isfile(cfg.model_checkpoints):
+            cp = cfg.model_checkpoints
+        else:
+            # get path to latest checkpoint
+            cp = tf.train.latest_checkpoint(cfg.model_checkpoints)
 
-    return cfg, model, data
+        # Load model
+        print(f'restoring model from checkpoint {cp}')
+        model.load_weights(cp)
+
+    return model
+
+
+def get_model_and_data(cfg):
+    # SEED ####################################################################
+    # Set seed to ensure reproducibility
+    tf.random.set_seed(cfg.seed)
+
+    # LOAD DATA ###############################################################
+    data = cfg.load_data()
+
+    # LOAD MODEL ##############################################################
+    model = build_model(cfg)
+
+    return model, data
 
 
 def train(args):
-    cfg, model, data = _prepare(args)
+    cfg = Configuration.from_yaml(args)
+
+    model, data = get_model_and_data(cfg)
     model.summary()
 
     if isinstance(data['train'], tuple):
@@ -100,7 +105,7 @@ def train(args):
 
 
 def test(args):
-    cfg, model, data = _prepare(args)
+    cfg, model, data = get_model_and_data(args)
     print(cfg)
     model.summary()
 

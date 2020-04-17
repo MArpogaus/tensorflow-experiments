@@ -19,12 +19,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# NOTES ######################################################################
+# NOTES #######################################################################
 #
 # This project is following the
 # [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/)
 #
-# CHANGELOG ##################################################################
+# CHANGELOG ###################################################################
+# modified by   : Marcel Arpogaus
+# modified time : 2020-04-17 10:32:59
+#  changes made : pass data as callable;
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-16 23:00:51
 #  changes made : added load_data function for data preprocessing;
@@ -46,33 +49,17 @@ from pprint import pformat
 from .utils import ExtendedLoader
 
 
-def frmt(key, value, width=80):
-    """
-     helper function for string formatting.
-
-     :param      s     string to be formatted
-
-     :returns:   a left aligned version of the string with 20 char length.
-    """
-    if type(value) is dict:
-        s = ''
-        for k in value:
-            s += frmt(key + '.' + k, value[k], width)
-        return s
-    else:
-        return "| {: <25}: {}".format(key, value).ljust(width - 1) + '|\n'
-
-
 class Configuration():
     """docstring for Configuration"""
 
     def __init__(self,
                  model: tf.keras.Model,
-                 data: callable,
+                 data_loader: callable,
                  seed: int,
                  model_checkpoints: str = None,
                  data_preprocessor: callable = None,
                  fit_kwds: dict = {},
+                 data_loader_kwds: dict = {},
                  compile_kwds: dict = {},
                  evaluate_kwds: dict = {}):
 
@@ -84,7 +71,8 @@ class Configuration():
         self.model_checkpoints = model_checkpoints
 
         # DATASET #############################################################
-        self.data = data
+        self.data_loader = data_loader
+        self.data_loader_kwds = data_loader_kwds
         self.data_preprocessor = data_preprocessor
 
         # KERAS ###############################################################
@@ -106,15 +94,20 @@ class Configuration():
             "\n)"
 
     @classmethod
-    def from_yaml(cls, configuration_file: io.TextIOWrapper):
-        config = yaml.load(configuration_file, Loader=ExtendedLoader)
+    def from_yaml(cls, configuration_file):
+        if type(configuration_file) is str:
+            cfg_file = open(configuration_file, 'r')
+        else:
+            cfg_file = configuration_file.config
+        config = yaml.load(cfg_file, Loader=ExtendedLoader)
+        cfg_file.close()
         return Configuration(**config)
 
     def to_yaml(self, configuration_file: io.TextIOWrapper):
         yaml.dump(self, Dumper=yaml.Dumper)
 
-    def load_data(self):
-        data = self.data
+    def load_data(self, **kwds):
+        data = self.data_loader(**{**self.data_loader_kwds, **kwds})
 
         # DATA FORMAT #########################################################
         if isinstance(data, tuple):
@@ -140,7 +133,7 @@ class Configuration():
                 raise ValueError(f"unexpected structure of dataset")
 
         elif isinstance(data, dict):
-            train_data = data['train']
+            train_data = data.get('train', None)
             test_data = data.get('test', None)
             val_data = data.get('validate', None)
 
