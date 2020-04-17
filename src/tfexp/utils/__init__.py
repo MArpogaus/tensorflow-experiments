@@ -1,1 +1,1 @@
-from .custom_yaml_tags import ExtendedLoader
+from .extended_loader import ExtendedLoader

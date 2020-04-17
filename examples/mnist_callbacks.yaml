@@ -1,6 +1,6 @@
 seed: 42
 
-model_checkpoints: !join [ !global [base_path, !datetime './logs/MNIST'], /mcp]
+model_checkpoints: !join [ !global [base_path, './logs/MNIST'], /mcp]
 
 model: !!python/object/apply:tensorflow.keras.models.Sequential
   args:
