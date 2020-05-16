@@ -26,7 +26,7 @@
 #
 # CHANGELOG ###################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-17 10:32:59
+# modified time : 2020-05-16 13:32:33
 #  changes made : pass data as callable;
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-16 23:00:51
@@ -56,6 +56,7 @@ class Configuration():
                  model: tf.keras.Model,
                  data_loader: callable,
                  seed: int,
+                 name: str = None,
                  model_checkpoints: str = None,
                  data_preprocessor: callable = None,
                  fit_kwds: dict = {},
@@ -65,6 +66,7 @@ class Configuration():
 
         # COMMON ##############################################################
         self.seed = seed
+        self.name = name or model.name
 
         # MODEL ###############################################################
         self.model = model
@@ -95,8 +97,10 @@ class Configuration():
 
     @classmethod
     def from_yaml(cls, configuration_file):
-        if type(configuration_file) is str:
+        if isinstance(configuration_file, str):
             cfg_file = open(configuration_file, 'r')
+        elif isinstance(configuration_file, io.TextIOBase):
+            cfg_file = configuration_file
         else:
             cfg_file = configuration_file.config
         config = yaml.load(cfg_file, Loader=ExtendedLoader)

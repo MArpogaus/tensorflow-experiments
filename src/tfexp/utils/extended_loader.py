@@ -29,12 +29,12 @@ class ExtendedLoader(yaml.Loader):
         self.add_constructor('!sum', self._np_sum_constructor)
         self.add_constructor('!join', self._join_constructor)
         self.add_constructor('!include', self._include_constructor)
-        self.add_constructor('!global',
+        self.add_constructor('!store',
                              self._set_global_variable_constructor)
         self.add_constructor('!load',
                              self._get_global_variable_constructor)
 
-        self.add_implicit_resolver(u'!global',
+        self.add_implicit_resolver(u'!store',
                                    self.set_global_variable_pattern,
                                    None)
 
