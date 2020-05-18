@@ -15,14 +15,13 @@ class ExtendedLoader(yaml.Loader):
 
     def __init__(self, stream: IO) -> None:
         super().__init__(stream)
-
         try:
             self._root = os.path.split(stream.name)[0]
         except AttributeError:
             self._root = os.path.curdir
 
         self.get_global_variable_pattern = re.compile(r'^\$(\w+)$')
-        self.set_global_variable_pattern = re.compile(r'^(\w+)\s+<=\s+(.+)$')
+        self.set_global_variable_pattern = re.compile(r'^(\w+)\s*<=\s*(.+)$')
 
         self.add_constructor('!datetime', self._date_time_constructor)
         self.add_constructor('!product', self._np_product_constructor)
@@ -60,11 +59,9 @@ class ExtendedLoader(yaml.Loader):
         return ''.join([str(i) for i in seq])
 
     def _include_constructor(self, loader, node):
-        path = os.path.join(self._root, self.construct_scalar(node))
-
+        path = os.path.join(loader._root, self.construct_scalar(node))
         with open(path, 'r') as yf:
             ref = yaml.load(yf, Loader=loader.__class__)
-
         return ref
 
     def _set_global_variable_constructor(self, loader, node):
