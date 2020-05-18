@@ -26,7 +26,7 @@
 #
 # CHANGELOG ###################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-04-17 14:20:15
+# modified time : 2020-05-18 09:47:50
 #  changes made : added test routine
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-16 11:30:32
@@ -83,9 +83,9 @@ def get_model_and_data(cfg):
     return model, data
 
 
-def train(args):
-    cfg = Configuration.from_yaml(args)
-
+def train(args, **kwds):
+    cfg = Configuration.from_yaml(args, **kwds)
+    print(cfg)
     model, data = get_model_and_data(cfg)
     model.summary()
 

@@ -26,7 +26,7 @@
 #
 # CHANGELOG ###################################################################
 # modified by   : Marcel Arpogaus
-# modified time : 2020-05-16 13:32:33
+# modified time : 2020-05-18 09:47:43
 #  changes made : pass data as callable;
 # modified by   : Marcel Arpogaus
 # modified time : 2020-04-16 23:00:51
@@ -70,7 +70,7 @@ class Configuration():
 
         # MODEL ###############################################################
         self.model = model
-        self.model_checkpoints = model_checkpoints
+        self.model_checkpoints = model_checkpoints or ''
 
         # DATASET #############################################################
         self.data_loader = data_loader
@@ -82,7 +82,7 @@ class Configuration():
         self.compile_kwds = compile_kwds
         self.evaluate_kwds = evaluate_kwds
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         """Display Configuration values."""
         def format(x):
             return f'  {x[0]}={pformat(x[1],indent=4)}'
@@ -96,7 +96,7 @@ class Configuration():
             "\n)"
 
     @classmethod
-    def from_yaml(cls, configuration_file):
+    def from_yaml(cls, configuration_file, **kwds):
         if isinstance(configuration_file, str):
             cfg_file = open(configuration_file, 'r')
         elif isinstance(configuration_file, io.TextIOBase):
@@ -105,6 +105,7 @@ class Configuration():
             cfg_file = configuration_file.config
         config = yaml.load(cfg_file, Loader=ExtendedLoader)
         cfg_file.close()
+        config.update(**kwds)
         return Configuration(**config)
 
     def to_yaml(self, configuration_file: io.TextIOWrapper):
