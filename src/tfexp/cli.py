@@ -1,10 +1,17 @@
 #!env python3
 # AUTHOR INFORMATION ##########################################################
-# file   : cli.py
-# brief  : [Description]
+# file    : cli.py
+# brief   : [Description]
 #
-# author : Marcel Arpogaus
-# date   : 2020-04-06 15:21:06
+# author  : Marcel Arpogaus
+# created : 2020-04-06 15:21:06
+# changed : 2020-11-15 19:42:00
+# DESCRIPTION #################################################################
+#
+# This project is following the PEP8 style guide:
+#
+#    https://www.python.org/dev/peps/pep-0008/)
+#
 # COPYRIGHT ###################################################################
 # Copyright 2020 Marcel Arpogaus
 #
@@ -19,18 +26,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# NOTES ######################################################################
-#
-# This project is following the
-# [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/)
-#
-# CHANGELOG ##################################################################
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-16 22:04:09
-#  changes made : ...
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:21:06
-#  changes made : newly written
 ###############################################################################
 
 # REQUIRED PYTHON MODULES #####################################################

@@ -1,10 +1,17 @@
 #!env python3
 # AUTHOR INFORMATION ##########################################################
-# file   : __init__.py
-# brief  : [Description]
+# file    : __init__.py
+# brief   : [Description]
 #
-# author : Marcel Arpogaus
-# date   : 2020-04-06 15:23:11
+# author  : Marcel Arpogaus
+# created : 2020-04-06 15:23:11
+# changed : 2020-11-15 19:40:24
+# DESCRIPTION #################################################################
+#
+# This project is following the PEP8 style guide:
+#
+#    https://www.python.org/dev/peps/pep-0008/)
+#
 # COPYRIGHT ###################################################################
 # Copyright 2020 Marcel Arpogaus
 #
@@ -19,28 +26,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# NOTES ######################################################################
-#
-# This project is following the
-# [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/)
-#
-# CHANGELOG ###################################################################
-# modified by   : Marcel Arpogaus
-# modified time : 2020-05-18 09:47:50
-#  changes made : added test routine
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-16 11:30:32
-#  changes made : refactoring and cleaning
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-08 19:00:30
-#  changes made : added support for data organized in dict
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-08 07:58:38
-#  changes made : return configuration and data
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:23:11
-#  changes made : newly written
 ###############################################################################
+
+# REQUIRED PYTHON MODULES #####################################################
 import os
 import tensorflow as tf
 
@@ -65,6 +53,8 @@ def build_model(cfg):
         if cp is not None:
             print(f'restoring model from checkpoint {cp}')
             model.load_weights(cp)
+    else:
+        os.makedirs(cfg.model_checkpoints)
 
     return model
 
