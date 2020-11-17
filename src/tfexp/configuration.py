@@ -5,7 +5,7 @@
 #
 # author  : Marcel Arpogaus
 # created : 2020-04-06 14:47:58
-# changed : 2020-11-15 19:41:55
+# changed : 2020-11-17 10:28:53
 # DESCRIPTION #################################################################
 #
 # This project is following the PEP8 style guide:
@@ -94,7 +94,9 @@ class Configuration():
         elif isinstance(configuration_file, io.TextIOBase):
             cfg_file = configuration_file
         else:
-            cfg_file = configuration_file.config
+            raise ValueError(
+                'Unsupported type for configuration_file: '
+                f'{type(configuration_file)}')
         config = yaml.load(cfg_file, Loader=ExtendedLoader)
         cfg_file.close()
         config.update(**kwds)

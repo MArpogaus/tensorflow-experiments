@@ -5,7 +5,7 @@
 #
 # author  : Marcel Arpogaus
 # created : 2020-04-06 15:21:06
-# changed : 2020-11-15 19:42:00
+# changed : 2020-11-17 10:15:22
 # DESCRIPTION #################################################################
 #
 # This project is following the PEP8 style guide:
@@ -29,9 +29,18 @@
 ###############################################################################
 
 # REQUIRED PYTHON MODULES #####################################################
+import os
 import argparse
 
 from . import train, test, predict
+
+
+def dir_path(path):
+    if os.path.exists(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(
+            f"{path} is not a valid path")
 
 
 def cli():
@@ -40,7 +49,8 @@ def cli():
     subparsers = p.add_subparsers()
 
     train_parser = subparsers.add_parser('train', help='train the model')
-    train_parser.add_argument('config', type=argparse.FileType(mode='r'))
+    train_parser.add_argument('config', type=dir_path)
+#    train_parser.add_argument('config', type=argparse.FileType(mode='r'))
     train_parser.set_defaults(func=train)
 
     test_parser = subparsers.add_parser('test', help='test the model')

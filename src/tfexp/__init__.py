@@ -5,7 +5,7 @@
 #
 # author  : Marcel Arpogaus
 # created : 2020-04-06 15:23:11
-# changed : 2020-11-15 19:40:24
+# changed : 2020-11-17 10:30:10
 # DESCRIPTION #################################################################
 #
 # This project is following the PEP8 style guide:
@@ -30,6 +30,7 @@
 
 # REQUIRED PYTHON MODULES #####################################################
 import os
+import io
 import tensorflow as tf
 
 from .configuration import Configuration
@@ -74,7 +75,27 @@ def get_model_and_data(cfg):
 
 
 def train(args, **kwds):
-    cfg = Configuration.from_yaml(args, **kwds)
+    if isinstance(args, (str, io.TextIOBase)):
+        cfg_file = args
+    elif os.path.isfile(args.config):
+        cfg_file = args.config
+    elif os.path.isdir(args.config):
+        results = {}
+        path = args.config
+        files = [os.path.join(path, file)
+                 for file in os.listdir(path) if file.endswith('yaml')]
+        print('Running in batch mode')
+        for cfg_file in files:
+            history, cfg, data = train(cfg_file)
+            results[cfg.name] = (history, cfg)
+        return results
+    else:
+        raise ValueError(
+            'Unsupported type for args: '
+            f'{type(args)}')
+
+    print(f'Reading file: {cfg_file}')
+    cfg = Configuration.from_yaml(cfg_file, **kwds)
     print(cfg)
     model, data = get_model_and_data(cfg)
     model.summary()
