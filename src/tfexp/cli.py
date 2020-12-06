@@ -5,7 +5,7 @@
 #
 # author  : Marcel Arpogaus
 # created : 2020-04-06 15:21:06
-# changed : 2020-11-17 10:15:22
+# changed : 2020-11-25 13:28:15
 # DESCRIPTION #################################################################
 #
 # This project is following the PEP8 style guide:
@@ -49,7 +49,7 @@ def cli():
     subparsers = p.add_subparsers()
 
     train_parser = subparsers.add_parser('train', help='train the model')
-    train_parser.add_argument('config', type=dir_path)
+    train_parser.add_argument('configs', type=dir_path, nargs='+')
 #    train_parser.add_argument('config', type=argparse.FileType(mode='r'))
     train_parser.set_defaults(func=train)
 

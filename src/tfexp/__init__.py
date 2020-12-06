@@ -5,7 +5,7 @@
 #
 # author  : Marcel Arpogaus
 # created : 2020-04-06 15:23:11
-# changed : 2020-11-17 10:30:10
+# changed : 2020-11-25 16:45:52
 # DESCRIPTION #################################################################
 #
 # This project is following the PEP8 style guide:
@@ -76,24 +76,30 @@ def get_model_and_data(cfg):
 
 def train(args, **kwds):
     if isinstance(args, (str, io.TextIOBase)):
-        cfg_file = args
-    elif os.path.isfile(args.config):
-        cfg_file = args.config
-    elif os.path.isdir(args.config):
-        results = {}
-        path = args.config
-        files = [os.path.join(path, file)
-                 for file in os.listdir(path) if file.endswith('yaml')]
-        print('Running in batch mode')
-        for cfg_file in files:
-            history, cfg, data = train(cfg_file)
-            results[cfg.name] = (history, cfg)
-        return results
+        cfg_files = [args]
+    elif isinstance(args, list):
+        cfg_files = args
     else:
-        raise ValueError(
-            'Unsupported type for args: '
-            f'{type(args)}')
+        cfg_files = args.configs
 
+    results = {}
+    for cfg_file in cfg_files:
+        if os.path.isfile(cfg_file):
+            history, cfg, data = _train(cfg_file, **kwds)
+            results[cfg.name] = (history, cfg)
+        elif os.path.isdir(cfg_file):
+            path = cfg_file
+            files = [os.path.join(path, file)
+                     for file in os.listdir(path) if file.endswith('yaml')]
+            results = {**results, **train(files, **kwds)}
+        else:
+            raise ValueError(
+                'Unsupported type for args: '
+                f'{type(args)}')
+    return results
+
+
+def _train(cfg_file, **kwds):
     print(f'Reading file: {cfg_file}')
     cfg = Configuration.from_yaml(cfg_file, **kwds)
     print(cfg)
