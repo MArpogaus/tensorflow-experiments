@@ -1,4 +1,5 @@
 seed: 42
+name: &name mnist
 
 model: !!python/object/apply:tensorflow.keras.models.Sequential
   args:
@@ -14,6 +15,14 @@ model: !!python/object/apply:tensorflow.keras.models.Sequential
         args: [10]
 
 data_loader: !!python/name:tensorflow.python.keras.datasets.mnist.load_data
+
+model_checkpoints: !join 
+  - !store 
+    - base_path
+    - !abspathjoin
+      - logs
+      - *name
+  - '/mcp'
 
 compile_kwds:
   loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
