@@ -1,10 +1,17 @@
 #!env python3
 # AUTHOR INFORMATION ##########################################################
-# file   : __init__.py
-# brief  : [Description]
+# file    : __init__.py
+# brief   : [Description]
 #
-# author : Marcel Arpogaus
-# date   : 2020-04-06 15:23:11
+# author  : Marcel Arpogaus
+# created : 2020-04-06 15:23:11
+# changed : 2020-11-25 16:45:52
+# DESCRIPTION #################################################################
+#
+# This project is following the PEP8 style guide:
+#
+#    https://www.python.org/dev/peps/pep-0008/)
+#
 # COPYRIGHT ###################################################################
 # Copyright 2020 Marcel Arpogaus
 #
@@ -19,29 +26,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# NOTES ######################################################################
-#
-# This project is following the
-# [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/)
-#
-# CHANGELOG ###################################################################
-# modified by   : Marcel Arpogaus
-# modified time : 2020-05-18 09:47:50
-#  changes made : added test routine
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-16 11:30:32
-#  changes made : refactoring and cleaning
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-08 19:00:30
-#  changes made : added support for data organized in dict
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-08 07:58:38
-#  changes made : return configuration and data
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:23:11
-#  changes made : newly written
 ###############################################################################
+
+# REQUIRED PYTHON MODULES #####################################################
 import os
+import io
 import tensorflow as tf
 
 from .configuration import Configuration
@@ -65,6 +54,8 @@ def build_model(cfg):
         if cp is not None:
             print(f'restoring model from checkpoint {cp}')
             model.load_weights(cp)
+    else:
+        os.makedirs(cfg.model_checkpoints)
 
     return model
 
@@ -84,7 +75,33 @@ def get_model_and_data(cfg):
 
 
 def train(args, **kwds):
-    cfg = Configuration.from_yaml(args, **kwds)
+    if isinstance(args, (str, io.TextIOBase)):
+        cfg_files = [args]
+    elif isinstance(args, list):
+        cfg_files = args
+    else:
+        cfg_files = args.configs
+
+    results = {}
+    for cfg_file in cfg_files:
+        if os.path.isfile(cfg_file):
+            history, cfg, data = _train(cfg_file, **kwds)
+            results[cfg.name] = (history, cfg)
+        elif os.path.isdir(cfg_file):
+            path = cfg_file
+            files = [os.path.join(path, file)
+                     for file in os.listdir(path) if file.endswith('yaml')]
+            results = {**results, **train(files, **kwds)}
+        else:
+            raise ValueError(
+                'Unsupported type for args: '
+                f'{type(args)}')
+    return results
+
+
+def _train(cfg_file, **kwds):
+    print(f'Reading file: {cfg_file}')
+    cfg = Configuration.from_yaml(cfg_file, **kwds)
     print(cfg)
     model, data = get_model_and_data(cfg)
     model.summary()

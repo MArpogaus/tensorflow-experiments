@@ -1,10 +1,17 @@
 #!env python3
 # AUTHOR INFORMATION ##########################################################
-# file   : cli.py
-# brief  : [Description]
+# file    : cli.py
+# brief   : [Description]
 #
-# author : Marcel Arpogaus
-# date   : 2020-04-06 15:21:06
+# author  : Marcel Arpogaus
+# created : 2020-04-06 15:21:06
+# changed : 2020-11-25 13:28:15
+# DESCRIPTION #################################################################
+#
+# This project is following the PEP8 style guide:
+#
+#    https://www.python.org/dev/peps/pep-0008/)
+#
 # COPYRIGHT ###################################################################
 # Copyright 2020 Marcel Arpogaus
 #
@@ -19,24 +26,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# NOTES ######################################################################
-#
-# This project is following the
-# [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/)
-#
-# CHANGELOG ##################################################################
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-16 22:04:09
-#  changes made : ...
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:21:06
-#  changes made : newly written
 ###############################################################################
 
 # REQUIRED PYTHON MODULES #####################################################
+import os
 import argparse
 
 from . import train, test, predict
+
+
+def dir_path(path):
+    if os.path.exists(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(
+            f"{path} is not a valid path")
 
 
 def cli():
@@ -45,7 +49,8 @@ def cli():
     subparsers = p.add_subparsers()
 
     train_parser = subparsers.add_parser('train', help='train the model')
-    train_parser.add_argument('config', type=argparse.FileType(mode='r'))
+    train_parser.add_argument('configs', type=dir_path, nargs='+')
+#    train_parser.add_argument('config', type=argparse.FileType(mode='r'))
     train_parser.set_defaults(func=train)
 
     test_parser = subparsers.add_parser('test', help='test the model')
