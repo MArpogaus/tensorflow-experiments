@@ -30,6 +30,7 @@
 
 # REQUIRED PYTHON MODULES #####################################################
 import io
+import sys
 import yaml
 
 import tensorflow as tf
@@ -41,28 +42,32 @@ from pprint import pformat
 from .utils import ExtendedLoader
 
 
-class Configuration():
+class Configuration:
     """docstring for Configuration"""
 
-    def __init__(self,
-                 model: tf.keras.Model,
-                 data_loader: callable,
-                 seed: int,
-                 name: str = None,
-                 model_checkpoints: str = None,
-                 data_preprocessor: callable = None,
-                 fit_kwds: dict = {},
-                 data_loader_kwds: dict = {},
-                 compile_kwds: dict = {},
-                 evaluate_kwds: dict = {}):
+    def __init__(
+        self,
+        model: tf.keras.Model,
+        data_loader: callable,
+        seed: int,
+        name: str = None,
+        use_mlflow: bool = "mlflow" in sys.modules,
+        model_checkpoints: str = None,
+        data_preprocessor: callable = None,
+        fit_kwds: dict = {},
+        data_loader_kwds: dict = {},
+        compile_kwds: dict = {},
+        evaluate_kwds: dict = {},
+    ):
 
         # COMMON ##############################################################
         self.seed = seed
         self.name = name or model.name
+        self.use_mlflow = use_mlflow
 
         # MODEL ###############################################################
         self.model = model
-        self.model_checkpoints = model_checkpoints or ''
+        self.model_checkpoints = model_checkpoints or ""
 
         # DATASET #############################################################
         self.data_loader = data_loader
@@ -76,27 +81,27 @@ class Configuration():
 
     def __repr__(self) -> str:
         """Display Configuration values."""
+
         def format(x):
-            return f'  {x[0]}={pformat(x[1],indent=4)}'
+            return f"  {x[0]}={pformat(x[1],indent=4)}"
 
         attr = []
         for a in dir(self):
             if not a.startswith("__") and not callable(getattr(self, a)):
                 attr.append((a, getattr(self, a)))
-        return self.__class__.__name__ + '(\n' + \
-            ',\n'.join(map(format, attr)) + \
-            "\n)"
+        return self.__class__.__name__ + "(\n" + ",\n".join(map(format, attr)) + "\n)"
 
     @classmethod
     def from_yaml(cls, configuration_file, **kwds):
         if isinstance(configuration_file, str):
-            cfg_file = open(configuration_file, 'r')
+            cfg_file = open(configuration_file, "r")
         elif isinstance(configuration_file, io.TextIOBase):
             cfg_file = configuration_file
         else:
             raise ValueError(
-                'Unsupported type for configuration_file: '
-                f'{type(configuration_file)}')
+                "Unsupported type for configuration_file: "
+                f"{type(configuration_file)}"
+            )
         config = yaml.load(cfg_file, Loader=ExtendedLoader)
         cfg_file.close()
         config.update(**kwds)
@@ -132,9 +137,9 @@ class Configuration():
                 raise ValueError(f"unexpected structure of dataset")
 
         elif isinstance(data, dict):
-            train_data = data.get('train', None)
-            test_data = data.get('test', None)
-            val_data = data.get('validate', None)
+            train_data = data.get("train", None)
+            test_data = data.get("test", None)
+            val_data = data.get("validate", None)
 
         elif isinstance(data, (DatasetV1, DatasetV2, Iterator)):
             train_data = data
@@ -144,11 +149,7 @@ class Configuration():
             raise ValueError(f"Dataset type '{type(data)}' unsupported")
 
         # Pack data in expected format
-        data = {
-            'train': train_data,
-            'validate': val_data,
-            'test': test_data
-        }
+        data = {"train": train_data, "validate": val_data, "test": test_data}
 
         # PREPROCESSING #######################################################
         if self.data_preprocessor is not None:

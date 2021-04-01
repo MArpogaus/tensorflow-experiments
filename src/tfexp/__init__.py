@@ -31,6 +31,13 @@
 # REQUIRED PYTHON MODULES #####################################################
 import os
 import io
+import sys
+
+try:
+    import mlflow
+except ImportError:
+    print("Warning: ackage 'mlflow' is not installed")
+
 import tensorflow as tf
 
 from .configuration import Configuration
@@ -52,7 +59,7 @@ def build_model(cfg):
 
         # Load model
         if cp is not None:
-            print(f'restoring model from checkpoint {cp}')
+            print(f"restoring model from checkpoint {cp}")
             model.load_weights(cp)
     else:
         os.makedirs(cfg.model_checkpoints)
@@ -81,6 +88,8 @@ def train(args, **kwds):
         cfg_files = args
     else:
         cfg_files = args.configs
+        if not args.use_mlflow:
+            kwds["use_mlflow"] = False
 
     results = {}
     for cfg_file in cfg_files:
@@ -89,32 +98,36 @@ def train(args, **kwds):
             results[cfg.name] = (history, cfg)
         elif os.path.isdir(cfg_file):
             path = cfg_file
-            files = [os.path.join(path, file)
-                     for file in os.listdir(path) if file.endswith('yaml')]
+            files = [
+                os.path.join(path, file)
+                for file in os.listdir(path)
+                if file.endswith("yaml")
+            ]
             results = {**results, **train(files, **kwds)}
         else:
-            raise ValueError(
-                'Unsupported type for args: '
-                f'{type(args)}')
+            raise ValueError("Unsupported type for args: " f"{type(args)}")
     return results
 
 
 def _train(cfg_file, **kwds):
-    print(f'Reading file: {cfg_file}')
+    print(f"Reading file: {cfg_file}")
     cfg = Configuration.from_yaml(cfg_file, **kwds)
     print(cfg)
+
+    if "mlflow" in sys.modules and cfg.use_mlflow:
+        mlflow.autolog()
+
     model, data = get_model_and_data(cfg)
     model.summary()
 
-    if isinstance(data['train'], tuple):
+    if isinstance(data["train"], tuple):
         # Data format: (train_x, train_y)
-        fit_kwds = dict(x=data['train'][0],
-                        y=data['train'][1],
-                        validation_data=data['validate'])
+        fit_kwds = dict(
+            x=data["train"][0], y=data["train"][1], validation_data=data["validate"]
+        )
     else:
         # Data format: dataset / generator or unsupervised
-        fit_kwds = dict(x=data['train'],
-                        validation_data=data['validate'])
+        fit_kwds = dict(x=data["train"], validation_data=data["validate"])
 
     # TRAIN ###################################################################
     history = model.fit(**fit_kwds, **cfg.fit_kwds)
@@ -127,13 +140,12 @@ def test(args):
     print(cfg)
     model.summary()
 
-    if isinstance(data['test'], tuple):
+    if isinstance(data["test"], tuple):
         # Data format: (test_x, test_y)
-        evaluate_kwds = dict(x=data['test'][0],
-                             y=data['test'][1])
+        evaluate_kwds = dict(x=data["test"][0], y=data["test"][1])
     else:
         # Data format: dataset / generator or unsupervised
-        evaluate_kwds = dict(x=data['test'])
+        evaluate_kwds = dict(x=data["test"])
 
     # EVALUATE ################################################################
     loss = model.evaluate(**evaluate_kwds, **cfg.evaluate_kwds)
