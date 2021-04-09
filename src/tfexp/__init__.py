@@ -1,18 +1,14 @@
-#!env python3
+#!/usr/bin/env python3
+# -*- time-stamp-pattern: "changed[\s]+:[\s]+%%$"; -*-
 # AUTHOR INFORMATION ##########################################################
 # file    : __init__.py
-# brief   : [Description]
+# author  : Marcel Arpogaus <marcel dot arpogaus at gmail dot com>
 #
-# author  : Marcel Arpogaus
-# created : 2020-04-06 15:23:11
-# changed : 2020-11-25 16:45:52
+# created : 2021-04-09 12:39:02 (Marcel Arpogaus)
+# changed : 2021-04-09 17:04:06 (Marcel Arpogaus)
 # DESCRIPTION #################################################################
-#
-# This project is following the PEP8 style guide:
-#
-#    https://www.python.org/dev/peps/pep-0008/)
-#
-# COPYRIGHT ###################################################################
+# ...
+# LICENSE #####################################################################
 # Copyright 2020 Marcel Arpogaus
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,23 +28,43 @@
 import os
 import io
 import sys
+import yaml
+import tempfile
+import argparse
+import hashlib
+
+from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
+from tensorflow.python.data.ops.iterator_ops import Iterator
+
+from .utils import ExtendedLoader
 
 try:
     import mlflow
 except ImportError:
-    print("Warning: ackage 'mlflow' is not installed")
+    print("Warning: package 'mlflow' is not installed")
 
 import tensorflow as tf
 
 from .configuration import Configuration
 
 
-def build_model(cfg):
-    # COMPILE MODEL ###########################################################
+def ensure_list(args, **kwds):
+    if isinstance(args, list):
+        return args
+    elif isinstance(args, argparse.Namespace):
+        return args.configs
+    else:
+        return list(args)
+
+
+def compile_model(cfg):
     model = cfg.model
     model.compile(**cfg.compile_kwds)
 
-    # LOAD CHECKPOINT #########################################################
+    return model
+
+
+def load_checkpoint(cfg, model):
     # ref: https://www.tensorflow.org/tutorials/keras/save_and_load
     if os.path.exists(cfg.model_checkpoints):
         if os.path.isfile(cfg.model_checkpoints):
@@ -67,59 +83,151 @@ def build_model(cfg):
     return model
 
 
-def get_model_and_data(cfg):
+def load_data(cfg, **kwds):
+    data = cfg.data_loader(**{**cfg.data_loader_kwds, **kwds})
+
+    # DATA FORMAT #########################################################
+    if isinstance(data, tuple):
+        if len(data) == 1:
+            # Data format: (train_x,[train_y])
+            train_data = data
+            test_data = None
+            val_data = None
+        if len(data) == 2:
+            # Data format: ((train_x,[train_y]),
+            #               (test_x,[test_y]))
+            train_data = data[0]
+            test_data = data[1]
+            val_data = None
+        elif len(data) == 3:
+            # Data format: ((train_x,[train_y]),
+            #               (val_x,[val_y]),
+            #               (test_x,[test_y]))
+            train_data = data[0]
+            val_data = data[1]
+            test_data = data[2]
+        else:
+            raise ValueError("unexpected structure of dataset")
+
+    elif isinstance(data, dict):
+        train_data = data.get("train", None)
+        test_data = data.get("test", None)
+        val_data = data.get("validate", None)
+
+    elif isinstance(data, (DatasetV1, DatasetV2, Iterator)):
+        train_data = data
+        test_data = None
+        val_data = None
+    else:
+        raise ValueError(f"Dataset type '{type(data)}' unsupported")
+
+    # Pack data in expected format
+    data = {"train": train_data, "validate": val_data, "test": test_data}
+
+    return data
+
+
+def open_cfg_file(cfg_file_path):
+    if isinstance(cfg_file_path, str):
+        cfg_file = open(cfg_file_path, "r")
+    elif isinstance(cfg_file_path, io.TextIOBase):
+        cfg_file = cfg_file_path
+    else:
+        raise ValueError(
+            "Unsupported type for configuration_file: " f"{type(cfg_file_path)}"
+        )
+    return cfg_file
+
+
+def load_cfg_from_yaml(cfg_file_path, **kwds):
+    print(f"Reading file: {cfg_file_path}")
+    cfg_file = open_cfg_file(cfg_file_path)
+    config = yaml.load(cfg_file, Loader=ExtendedLoader)
+    config.update(**kwds)
+    cfg = Configuration(**config)
+
+    cfg_file.seek(0)
+    sha1 = hashlib.sha1(cfg_file.read().encode("utf-8")).hexdigest()
+    cfg_file.close()
+
+    print(cfg)
+
+    return cfg, sha1
+
+
+def log_cfg(cfg_file_path):
+    cfg_file = open_cfg_file(cfg_file_path)
+
+    tmp_dir = tempfile.mkdtemp()
+    tmp_file = os.path.join(tmp_dir, "config.yaml")
+    with open(tmp_file, "w+") as f:
+        f.write(cfg_file.read())
+    mlflow.log_artifact(tmp_file)
+
+    cfg_file.close()
+
+
+def load_model_and_data(cfg):
     # SEED ####################################################################
     # Set seed to ensure reproducibility
     tf.random.set_seed(cfg.seed)
 
     # LOAD DATA ###############################################################
-    data = cfg.load_data()
+    data = load_data(cfg)
 
     # LOAD MODEL ##############################################################
-    model = build_model(cfg)
+    model = compile_model(cfg)
+    model = load_checkpoint(cfg, model)
 
     return model, data
 
 
-def train(args, **kwds):
-    if isinstance(args, (str, io.TextIOBase)):
-        cfg_files = [args]
-    elif isinstance(args, list):
-        cfg_files = args
-    else:
-        cfg_files = args.configs
-        if not args.use_mlflow:
-            kwds["use_mlflow"] = False
-
-    results = {}
-    for cfg_file in cfg_files:
-        if os.path.isfile(cfg_file):
-            history, cfg, data = _train(cfg_file, **kwds)
-            results[cfg.name] = (history, cfg)
-        elif os.path.isdir(cfg_file):
-            path = cfg_file
+def gen_cfg_file_mapper(fn, **kwds):
+    def map_fn(cfg_file_path):
+        if os.path.isfile(cfg_file_path):
+            cfg, sha1 = load_cfg_from_yaml(cfg_file_path, **kwds)
+            model, data = load_model_and_data(cfg)
+            if "mlflow" in sys.modules and cfg.use_mlflow:
+                experiment_id = mlflow.set_experiment(cfg.name)
+                # mlflow.start_run(nested=True)
+                mlflow.start_run(experiment_id=experiment_id, run_name=sha1)
+                # TODO: retrive existing run from db
+                log_cfg(cfg_file_path)
+                mlflow.start_run(experiment_id=experiment_id, nested=True)
+                # mlflow.start_run(run_id=0)
+                mlflow.autolog(exclusive=False)
+            res = fn(cfg, model, data)
+            return (cfg_file_path, dict(cfg=cfg, model=model, data=data, res=res))
+        elif os.path.isdir(cfg_file_path):
+            path = cfg_file_path
             files = [
                 os.path.join(path, file)
                 for file in os.listdir(path)
                 if file.endswith("yaml")
             ]
-            results = {**results, **train(files, **kwds)}
+            return path, dict(map(gen_cfg_file_mapper(fn, **kwds), files))
         else:
-            raise ValueError("Unsupported type for args: " f"{type(args)}")
-    return results
+            raise ValueError(
+                f"Unsupported type for cfg_file_path: {type(cfg_file_path)}"
+            )
+
+    return map_fn
 
 
-def _train(cfg_file, **kwds):
-    print(f"Reading file: {cfg_file}")
-    cfg = Configuration.from_yaml(cfg_file, **kwds)
-    print(cfg)
+def cmd_helper(cmd, args, **kwds):
+    cfg_files = ensure_list(args, **kwds)
+    return dict(map(gen_cfg_file_mapper(cmd, **kwds), cfg_files))
 
-    if "mlflow" in sys.modules and cfg.use_mlflow:
-        mlflow.autolog()
 
-    model, data = get_model_and_data(cfg)
-    model.summary()
+def train(args, **kwds):
+    return cmd_helper(_train, args, **kwds)
 
+
+def test(args, **kwds):
+    return cmd_helper(_test, args, **kwds)
+
+
+def _train(cfg, model, data):
     if isinstance(data["train"], tuple):
         # Data format: (train_x, train_y)
         fit_kwds = dict(
@@ -132,14 +240,10 @@ def _train(cfg_file, **kwds):
     # TRAIN ###################################################################
     history = model.fit(**fit_kwds, **cfg.fit_kwds)
 
-    return history, cfg, data
+    return history
 
 
-def test(args):
-    cfg, model, data = get_model_and_data(args)
-    print(cfg)
-    model.summary()
-
+def _test(cfg, model, data):
     if isinstance(data["test"], tuple):
         # Data format: (test_x, test_y)
         evaluate_kwds = dict(x=data["test"][0], y=data["test"][1])
@@ -150,8 +254,4 @@ def test(args):
     # EVALUATE ################################################################
     loss = model.evaluate(**evaluate_kwds, **cfg.evaluate_kwds)
 
-    return loss, cfg, model
-
-
-def predict():
-    pass
+    return loss

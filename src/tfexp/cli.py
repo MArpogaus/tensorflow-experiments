@@ -33,7 +33,7 @@ import os
 import pkgutil
 import argparse
 
-from . import train, test, predict
+from . import train, test
 
 
 def dir_path(path):
@@ -58,11 +58,14 @@ def cli():
     train_parser.set_defaults(func=train)
 
     test_parser = subparsers.add_parser("test", help="test the model")
-    test_parser.add_argument("config", type=argparse.FileType(mode="r"))
+    test_parser.add_argument("configs", type=dir_path, nargs="+")
+    test_parser.add_argument(
+        "--use-mlflow",
+        help="use mlflow to record metrics",
+        type=bool,
+        default=pkgutil.find_loader("mlflow"),
+    )
     test_parser.set_defaults(func=test)
-
-    predict_parser = subparsers.add_parser("predict")
-    predict_parser.set_defaults(func=predict)
 
     args = p.parse_args()
     args.func(args)

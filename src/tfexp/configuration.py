@@ -29,21 +29,15 @@
 ###############################################################################
 
 # REQUIRED PYTHON MODULES #####################################################
-import io
 import sys
-import yaml
 
 import tensorflow as tf
 
-from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
-from tensorflow.python.data.ops.iterator_ops import Iterator
 from pprint import pformat
-
-from .utils import ExtendedLoader
 
 
 class Configuration:
-    """docstring for Configuration"""
+    """This class stores all states required for experiments"""
 
     def __init__(
         self,
@@ -51,9 +45,8 @@ class Configuration:
         data_loader: callable,
         seed: int,
         name: str = None,
-        use_mlflow: bool = "mlflow" in sys.modules,
+        use_mlflow: bool = True,
         model_checkpoints: str = None,
-        data_preprocessor: callable = None,
         fit_kwds: dict = {},
         data_loader_kwds: dict = {},
         compile_kwds: dict = {},
@@ -63,7 +56,7 @@ class Configuration:
         # COMMON ##############################################################
         self.seed = seed
         self.name = name or model.name
-        self.use_mlflow = use_mlflow
+        self.use_mlflow = use_mlflow and "mlflow" in sys.modules
 
         # MODEL ###############################################################
         self.model = model
@@ -72,7 +65,6 @@ class Configuration:
         # DATASET #############################################################
         self.data_loader = data_loader
         self.data_loader_kwds = data_loader_kwds
-        self.data_preprocessor = data_preprocessor
 
         # KERAS ###############################################################
         self.fit_kwds = fit_kwds
@@ -90,69 +82,3 @@ class Configuration:
             if not a.startswith("__") and not callable(getattr(self, a)):
                 attr.append((a, getattr(self, a)))
         return self.__class__.__name__ + "(\n" + ",\n".join(map(format, attr)) + "\n)"
-
-    @classmethod
-    def from_yaml(cls, configuration_file, **kwds):
-        if isinstance(configuration_file, str):
-            cfg_file = open(configuration_file, "r")
-        elif isinstance(configuration_file, io.TextIOBase):
-            cfg_file = configuration_file
-        else:
-            raise ValueError(
-                "Unsupported type for configuration_file: "
-                f"{type(configuration_file)}"
-            )
-        config = yaml.load(cfg_file, Loader=ExtendedLoader)
-        cfg_file.close()
-        config.update(**kwds)
-        return Configuration(**config)
-
-    def to_yaml(self, configuration_file: io.TextIOWrapper):
-        yaml.dump(self, Dumper=yaml.Dumper)
-
-    def load_data(self, **kwds):
-        data = self.data_loader(**{**self.data_loader_kwds, **kwds})
-
-        # DATA FORMAT #########################################################
-        if isinstance(data, tuple):
-            if len(data) == 1:
-                # Data format: (train_x,[train_y])
-                train_data = data
-                test_data = None
-                val_data = None
-            if len(data) == 2:
-                # Data format: ((train_x,[train_y]),
-                #               (test_x,[test_y]))
-                train_data = data[0]
-                test_data = data[1]
-                val_data = None
-            elif len(data) == 3:
-                # Data format: ((train_x,[train_y]),
-                #               (val_x,[val_y]),
-                #               (test_x,[test_y]))
-                train_data = data[0]
-                val_data = data[1]
-                test_data = data[2]
-            else:
-                raise ValueError(f"unexpected structure of dataset")
-
-        elif isinstance(data, dict):
-            train_data = data.get("train", None)
-            test_data = data.get("test", None)
-            val_data = data.get("validate", None)
-
-        elif isinstance(data, (DatasetV1, DatasetV2, Iterator)):
-            train_data = data
-            test_data = None
-            val_data = None
-        else:
-            raise ValueError(f"Dataset type '{type(data)}' unsupported")
-
-        # Pack data in expected format
-        data = {"train": train_data, "validate": val_data, "test": test_data}
-
-        # PREPROCESSING #######################################################
-        if self.data_preprocessor is not None:
-            data = self.data_preprocessor(data)
-
-        return data
