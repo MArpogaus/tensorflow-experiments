@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import time
 import pytest
 
 import yaml
@@ -28,34 +27,30 @@ include_seq_yaml = """
 """
 
 expected_dict = {
-    'a': 2,
-    'c': {
-        'e': 4,
-        'g': 2,
-        'i': 'hello'
-    },
-    'd': 4,
-    'f': 14,
-    'h': 'hello world'
+    "a": 2,
+    "c": {"e": 4, "g": 2, "i": "hello"},
+    "d": 4,
+    "f": 14,
+    "h": "hello world",
 }
 
 
 @pytest.fixture(scope="session")
 def artificial_data(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp("yaml_data")
-    with open(tmpdir / 'test.yaml', 'w+') as f:
+    with open(tmpdir / "test.yaml", "w+") as f:
         f.write(test_yaml)
-    os.mkdir(tmpdir / 'inc1')
-    os.mkdir(tmpdir / 'inc2')
-    with open(tmpdir / 'inc1' / 'include_var.yaml', 'w+') as f:
+    os.mkdir(tmpdir / "inc1")
+    os.mkdir(tmpdir / "inc2")
+    with open(tmpdir / "inc1" / "include_var.yaml", "w+") as f:
         f.write(include_var_yaml)
-    with open(tmpdir / 'inc2' / 'include_seq.yaml', 'w+') as f:
+    with open(tmpdir / "inc2" / "include_seq.yaml", "w+") as f:
         f.write(include_seq_yaml)
 
     return tmpdir
 
 
 def test_artificial_data(artificial_data):
-    with open(artificial_data / 'test.yaml') as f:
+    with open(artificial_data / "test.yaml") as f:
         d = yaml.load(f, Loader=ExtendedLoader)
-    assert d == expected_dict, 'Fail'
+    assert d == expected_dict, "Fail"

@@ -1,9 +1,7 @@
-name: My Project
+name: Mnist Example
+experiemnt name: test
 
-conda_env: conda_env.yaml
-# Can have a docker_env instead of a conda_env, e.g.
-# docker_env:
-#    image:  mlflow-docker-example
+conda_env: mlflow/conda_env.yaml
 
 entry_points:
   main:
