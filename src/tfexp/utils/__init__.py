@@ -29,21 +29,23 @@
 ###############################################################################
 
 # REQUIRED PYTHON MODULES #####################################################
+import argparse
+import hashlib
 import io
 import os
 import sys
-import yaml
-import argparse
-import hashlib
 import tempfile
+from functools import partial
+from itertools import starmap
+import yaml
 
 try:
     import mlflow
 except ImportError:
     print("Warning: package 'mlflow' is not installed")
 
-from .extended_loader import ExtendedLoader
 from ..configuration import Configuration
+from .extended_loader import ExtendedLoader
 
 
 def ensure_list(args, **kwds):
@@ -92,6 +94,17 @@ def log_cfg(cfg_file_path):
     cfg_file.close()
 
 
+def log_res(key, res, step=None):
+    if isinstance(res, dict):
+        list(starmap(log_res, res.items()))
+    elif isinstance(res, list):
+        list(starmap(partial(log_res, key), zip(res, range(len(res)))))
+    elif isinstance(res, (int, float)):
+        mlflow.log_metric(key, float(res), step)
+    else:
+        print(f"Warning: metric type '{type(res)}' unsupported.")
+
+
 def run(cfg_file_path, fn, framework, **kwds):
     # CONFIG ##################################################################
     print(f"Reading file: {cfg_file_path}")
@@ -115,11 +128,22 @@ def run(cfg_file_path, fn, framework, **kwds):
     # MLFLOW ##################################################################
     if "mlflow" in sys.modules and cfg.use_mlflow:
         experiment_id = mlflow.set_experiment(cfg.name)
-        mlflow.start_run(experiment_id=experiment_id, run_name=sha1)
+        query = f"tags.mlflow.runName = '{sha1}'"
+        results = mlflow.search_runs(
+            experiment_ids=experiment_id, filter_string=query, output_format="list"
+        )
+        if len(results) > 0:
+            run_id = results[0].info.run_id
+            mlflow.start_run(experiment_id=experiment_id, run_id=run_id)
+        else:
+            mlflow.start_run(experiment_id=experiment_id, run_name=sha1)
+            log_cfg(cfg_file_path)
+        mlflow.start_run(run_name=fn.__name__, nested=True)
         mlflow.autolog(exclusive=False)
-        log_cfg(cfg_file_path)
     res = fn(cfg, model, data)
     if "mlflow" in sys.modules and cfg.use_mlflow:
+        log_res(fn.__name__, res)
+        mlflow.end_run()
         mlflow.end_run()
     return dict(cfg=cfg, model=model, data=data, res=res)
 

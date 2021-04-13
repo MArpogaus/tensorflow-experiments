@@ -30,10 +30,9 @@
 
 # REQUIRED PYTHON MODULES #####################################################
 import sys
+from pprint import pformat
 
 import tensorflow as tf
-
-from pprint import pformat
 
 
 class Configuration:

@@ -103,6 +103,7 @@ def test(cfg, model, data):
         # Data format: dataset / generator or unsupervised
         evaluate_kwds = dict(x=data["test"])
 
+    evaluate_kwds["return_dict"] = evaluate_kwds.get("return_dict", True)
     # EVALUATE ################################################################
     loss = model.evaluate(**evaluate_kwds, **cfg.evaluate_kwds)
 
