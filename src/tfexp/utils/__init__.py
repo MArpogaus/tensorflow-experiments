@@ -30,13 +30,14 @@
 
 # REQUIRED PYTHON MODULES #####################################################
 import argparse
-import hashlib
+import contextlib
 import io
 import os
 import sys
 import tempfile
 from functools import partial
 from itertools import starmap
+
 import yaml
 
 try:
@@ -57,41 +58,21 @@ def ensure_list(args, **kwds):
         return [args]
 
 
-def open_cfg_file(cfg_file_path):
-    if isinstance(cfg_file_path, str):
-        cfg_file = open(cfg_file_path, "r")
-    elif isinstance(cfg_file_path, io.TextIOBase):
-        cfg_file = cfg_file_path
-    else:
-        raise ValueError(
-            "Unsupported type for configuration_file: " f"{type(cfg_file_path)}"
-        )
-    return cfg_file
-
-
-def load_cfg_from_yaml(cfg_file_path, **kwds):
-    cfg_file = open_cfg_file(cfg_file_path)
+def load_cfg_from_yaml(cfg_file, **kwds):
+    print(f"Reading file: {cfg_file.name}")
     config = yaml.load(cfg_file, Loader=ExtendedLoader)
     config.update(**kwds)
     cfg = Configuration(**config)
 
-    cfg_file.seek(0)
-    sha1 = hashlib.sha1(cfg_file.read().encode("utf-8")).hexdigest()
-    cfg_file.close()
-
-    return cfg, sha1
+    return cfg
 
 
-def log_cfg(cfg_file_path):
-    cfg_file = open_cfg_file(cfg_file_path)
-
+def log_cfg(cfg):
     tmp_dir = tempfile.mkdtemp()
-    tmp_file = os.path.join(tmp_dir, "config.yaml")
+    tmp_file = os.path.join(tmp_dir, "config.txt")
     with open(tmp_file, "w+") as f:
-        f.write(cfg_file.read())
+        f.write(repr(cfg))
     mlflow.log_artifact(tmp_file)
-
-    cfg_file.close()
 
 
 def log_res(key, res, step=None):
@@ -105,11 +86,22 @@ def log_res(key, res, step=None):
         print(f"Warning: metric type '{type(res)}' unsupported.")
 
 
-def run(cfg_file_path, fn, framework, **kwds):
+def run(cfg, fn, framework, **kwds):
     # CONFIG ##################################################################
-    print(f"Reading file: {cfg_file_path}")
-    cfg, sha1 = load_cfg_from_yaml(cfg_file_path, **kwds)
     print(cfg)
+
+    # MLFLOW ##################################################################
+    if "mlflow" in sys.modules and cfg.use_mlflow:
+        query = f"tags.mlflow.runName = '{cfg.name}'"
+        results = mlflow.search_runs(filter_string=query, output_format="list")
+        if len(results) > 0:
+            run_id = results[0].info.run_id
+            mlflow.start_run(run_id=run_id)
+        else:
+            mlflow.start_run(run_name=cfg.name)
+        mlflow.start_run(run_name=fn.__name__, nested=True)
+        log_cfg(cfg)
+        mlflow.autolog(exclusive=False)
 
     # SEED ####################################################################
     # Set seed to ensure reproducibility
@@ -125,48 +117,37 @@ def run(cfg_file_path, fn, framework, **kwds):
     model = framework.compile_model(cfg)
     model = framework.load_checkpoint(cfg, model)
 
-    # MLFLOW ##################################################################
-    if "mlflow" in sys.modules and cfg.use_mlflow:
-        experiment_id = mlflow.set_experiment(cfg.name)
-        query = f"tags.mlflow.runName = '{sha1}'"
-        results = mlflow.search_runs(
-            experiment_ids=experiment_id, filter_string=query, output_format="list"
-        )
-        if len(results) > 0:
-            run_id = results[0].info.run_id
-            mlflow.start_run(experiment_id=experiment_id, run_id=run_id)
-        else:
-            mlflow.start_run(experiment_id=experiment_id, run_name=sha1)
-            log_cfg(cfg_file_path)
-        mlflow.start_run(run_name=fn.__name__, nested=True)
-        mlflow.autolog(exclusive=False)
     res = fn(cfg, model, data)
     if "mlflow" in sys.modules and cfg.use_mlflow:
         log_res(fn.__name__, res)
         mlflow.end_run()
         mlflow.end_run()
-    return dict(cfg=cfg, model=model, data=data, res=res)
+    return cfg, dict(model=model, data=data, res=res)
 
 
-def gen_cfg_file_mapper(fn, framework, **kwds):
-    def map_fn(cfg_file_path):
-        if os.path.isfile(cfg_file_path):
-            res = run(cfg_file_path, fn, framework, **kwds)
-            return (cfg_file_path, res)
-        elif os.path.isdir(cfg_file_path):
-            path = cfg_file_path
+def cfg_generator(cfg_files, **kwds):
+    for cfg_or_file in cfg_files:
+        if isinstance(cfg_or_file, Configuration):
+            yield cfg_or_file
+        elif isinstance(cfg_or_file, io.TextIOBase):
+            with contextlib.closing(cfg_or_file) as cfg_file:
+                yield load_cfg_from_yaml(cfg_file, **kwds)
+        elif os.path.isfile(cfg_or_file) and cfg_or_file.endswith(".yaml"):
+            with open(cfg_or_file, "r") as cfg_file:
+                yield load_cfg_from_yaml(cfg_file, **kwds)
+        elif os.path.isdir(cfg_or_file):
+            path = cfg_or_file
             files = [
                 os.path.join(path, file)
                 for file in os.listdir(path)
-                if file.endswith("yaml")
+                if file.endswith(".yaml")
             ]
-            return path, dict(map(gen_cfg_file_mapper(fn, framework, **kwds), files))
+            yield from cfg_generator(files)
         else:
-            raise ValueError(f"Configuration file '{cfg_file_path}' not found.'")
-
-    return map_fn
+            raise ValueError(f"Configuration file '{cfg_or_file}' not found.'")
 
 
 def cmd_helper(cmd, framework, args, **kwds):
     cfg_files = ensure_list(args, **kwds)
-    return dict(map(gen_cfg_file_mapper(cmd, framework, **kwds), cfg_files))
+    cfgs = cfg_generator(cfg_files)
+    return dict(map(partial(run, fn=cmd, framework=framework, **kwds), cfgs))

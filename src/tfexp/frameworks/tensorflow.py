@@ -73,7 +73,7 @@ def load_checkpoint(cfg, model):
         if cp is not None:
             print(f"restoring model from checkpoint {cp}")
             model.load_weights(cp)
-    else:
+    elif cfg.model_checkpoints != "":
         os.makedirs(cfg.model_checkpoints)
 
     return model
