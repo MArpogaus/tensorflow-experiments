@@ -1,12 +1,13 @@
 #!env python3
 # -*- coding: utf-8 -*-
 
+import io
 import os
+from functools import partial
+
 import pytest
-
 import yaml
-
-from tfexp.utils import ExtendedLoader
+from tfexp.utils.extended_loader import get_loader
 
 test_yaml = """
 a: !store [b, 2]
@@ -34,6 +35,13 @@ expected_dict = {
     "h": "hello world",
 }
 
+switchcmd_yaml = """
+case: !switchcmd
+    A: 10
+    B: 11
+    default: 12
+"""
+
 
 @pytest.fixture(scope="session")
 def artificial_data(tmpdir_factory):
@@ -52,5 +60,14 @@ def artificial_data(tmpdir_factory):
 
 def test_artificial_data(artificial_data):
     with open(artificial_data / "test.yaml") as f:
-        d = yaml.load(f, Loader=ExtendedLoader)
+        d = yaml.load(f, Loader=get_loader(cmd=""))
+
     assert d == expected_dict, "Fail"
+
+
+def test_swithcmd():
+    test_yaml = io.StringIO(switchcmd_yaml)
+    for c, i in zip(["A", "B", "C"], [10, 11, 12]):
+        test_yaml.seek(0)
+        d = yaml.load(test_yaml, Loader=get_loader(cmd=c))
+        assert d["case"] == i, "Fail"
