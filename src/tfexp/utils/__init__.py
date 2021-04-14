@@ -35,6 +35,7 @@ import io
 import os
 import sys
 import tempfile
+from contextlib import contextmanager
 from functools import partial
 from itertools import starmap
 
@@ -46,10 +47,10 @@ except ImportError:
     print("Warning: package 'mlflow' is not installed")
 
 from ..configuration import Configuration
-from .extended_loader import ExtendedLoader
+from .extended_loader import get_loader
 
 
-def ensure_list(args, **kwds):
+def ensure_list(args):
     if isinstance(args, list):
         return args
     elif isinstance(args, argparse.Namespace):
@@ -58,9 +59,9 @@ def ensure_list(args, **kwds):
         return [args]
 
 
-def load_cfg_from_yaml(cfg_file, **kwds):
+def load_cfg_from_yaml(cmd, cfg_file, **kwds):
     print(f"Reading file: {cfg_file.name}")
-    config = yaml.load(cfg_file, Loader=ExtendedLoader)
+    config = yaml.load(cfg_file, Loader=get_loader(cmd))
     config.update(**kwds)
     cfg = Configuration(**config)
 
@@ -86,12 +87,16 @@ def log_res(key, res, step=None):
         print(f"Warning: metric type '{type(res)}' unsupported.")
 
 
-def run(cfg, fn, framework, **kwds):
-    # CONFIG ##################################################################
-    print(cfg)
+def log_cfg_values(cfg, keys):
+    for k in keys:
+        if k in cfg.mlflow.keys():
+            log_fn = getattr(mlflow, k)
+            log_fn(cfg.mlflow[k])
 
-    # MLFLOW ##################################################################
-    if "mlflow" in sys.modules and cfg.use_mlflow:
+
+@contextmanager
+def mlflow_tracking(cfg, name):
+    if "mlflow" in sys.modules and cfg.mlflow["enable"]:
         query = f"tags.mlflow.runName = '{cfg.name}'"
         results = mlflow.search_runs(filter_string=query, output_format="list")
         if len(results) > 0:
@@ -99,42 +104,58 @@ def run(cfg, fn, framework, **kwds):
             mlflow.start_run(run_id=run_id)
         else:
             mlflow.start_run(run_name=cfg.name)
-        mlflow.start_run(run_name=fn.__name__, nested=True)
+        child_run = mlflow.start_run(run_name=name, nested=True)
         log_cfg(cfg)
         mlflow.autolog(exclusive=False)
+        log_cfg_values(cfg, ["log_params"])
+        try:
+            yield child_run
+        finally:
+            log_cfg_values(cfg, ["log_artifacts", "log_artifact"])
 
-    # SEED ####################################################################
-    # Set seed to ensure reproducibility
-    print(f"Setting random seed to: {cfg.seed}")
-    framework.set_seed(cfg.seed)
+            mlflow.end_run()  # child_run
+            mlflow.end_run()  # parent_run
+    else:
+        yield None
 
-    # LOAD DATA ###############################################################
-    print("Loading data...")
-    data = framework.load_data(cfg)
 
-    # LOAD MODEL ##############################################################
-    print("Loading model...")
-    model = framework.compile_model(cfg)
-    model = framework.load_checkpoint(cfg, model)
+def run(cfg, fn, framework, **kwds):
+    # CONFIG ##################################################################
+    print(cfg)
 
-    res = fn(cfg, model, data)
-    if "mlflow" in sys.modules and cfg.use_mlflow:
-        log_res(fn.__name__, res)
-        mlflow.end_run()
-        mlflow.end_run()
+    # MLFLOW ##################################################################
+    with mlflow_tracking(cfg, fn.__name__) as active_run:
+
+        # SEED ################################################################
+        # Set seed to ensure reproducibility
+        print(f"Setting random seed to: {cfg.seed}")
+        framework.set_seed(cfg.seed)
+
+        # LOAD DATA ###########################################################
+        print("Loading data...")
+        data = framework.load_data(cfg)
+
+        # LOAD MODEL ##########################################################
+        print("Loading model...")
+        model = framework.compile_model(cfg)
+        model = framework.load_checkpoint(cfg, model)
+
+        res = fn(cfg, model, data)
+        if active_run:
+            log_res(fn.__name__, res)
     return cfg, dict(model=model, data=data, res=res)
 
 
-def cfg_generator(cfg_files, **kwds):
+def cfg_generator(cmd, cfg_files, **kwds):
     for cfg_or_file in cfg_files:
         if isinstance(cfg_or_file, Configuration):
             yield cfg_or_file
         elif isinstance(cfg_or_file, io.TextIOBase):
             with contextlib.closing(cfg_or_file) as cfg_file:
-                yield load_cfg_from_yaml(cfg_file, **kwds)
+                yield load_cfg_from_yaml(cmd, cfg_file, **kwds)
         elif os.path.isfile(cfg_or_file) and cfg_or_file.endswith(".yaml"):
             with open(cfg_or_file, "r") as cfg_file:
-                yield load_cfg_from_yaml(cfg_file, **kwds)
+                yield load_cfg_from_yaml(cmd, cfg_file, **kwds)
         elif os.path.isdir(cfg_or_file):
             path = cfg_or_file
             files = [
@@ -142,12 +163,21 @@ def cfg_generator(cfg_files, **kwds):
                 for file in os.listdir(path)
                 if file.endswith(".yaml")
             ]
-            yield from cfg_generator(files)
+            yield from cfg_generator(cmd, files)
         else:
             raise ValueError(f"Configuration file '{cfg_or_file}' not found.'")
 
 
+def process_cli_args(args):
+    if isinstance(args, argparse.Namespace):
+        return {"mlflow": {"enable": args.no_mlflow}}
+    else:
+        return {}
+
+
 def cmd_helper(cmd, framework, args, **kwds):
-    cfg_files = ensure_list(args, **kwds)
-    cfgs = cfg_generator(cfg_files)
+    cfg_files = ensure_list(args)
+    kwds.update(process_cli_args(args))
+    print(kwds)
+    cfgs = cfg_generator(cmd.__name__, cfg_files, **kwds)
     return dict(map(partial(run, fn=cmd, framework=framework, **kwds), cfgs))

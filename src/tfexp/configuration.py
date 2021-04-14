@@ -44,7 +44,7 @@ class Configuration:
         data_loader: callable,
         seed: int,
         name: str = None,
-        use_mlflow: bool = True,
+        mlflow: dict = {},
         model_checkpoints: str = None,
         fit_kwds: dict = {},
         data_loader_kwds: dict = {},
@@ -55,7 +55,8 @@ class Configuration:
         # COMMON ##############################################################
         self.seed = seed
         self.name = name or model.name
-        self.use_mlflow = use_mlflow and "mlflow" in sys.modules
+        self.mlflow = mlflow
+        self.mlflow["enable"] = mlflow.get("enable", "mlflow" in sys.modules)
 
         # MODEL ###############################################################
         self.model = model

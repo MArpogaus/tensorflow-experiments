@@ -2,13 +2,18 @@ seed: 42
 
 model_checkpoints: !join [ !store [base_path, './logs/MNIST'], /mcp]
 
+mlflow:
+  log_artifacts: $base_path
+  log_params:
+    hidden_units: &units 128
+
 model: !!python/object/apply:tensorflow.keras.models.Sequential
   args:
     - !!python/list
       - !!python/object/apply:tensorflow.keras.layers.Flatten
         kwds: {input_shape: !!python/tuple [28, 28]}
       - !!python/object/apply:tensorflow.keras.layers.Dense
-        args: [128]
+        args: [*units]
         kwds: {activation: relu}
       - !!python/object/apply:tensorflow.keras.layers.Dropout
         args: [0.2]

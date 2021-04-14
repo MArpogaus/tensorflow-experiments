@@ -30,7 +30,6 @@
 
 # REQUIRED PYTHON MODULES #####################################################
 import os
-import pkgutil
 import argparse
 
 from . import train, test
@@ -50,20 +49,18 @@ def cli():
     train_parser = subparsers.add_parser("train", help="train the model")
     train_parser.add_argument("configs", type=dir_path, nargs="+")
     train_parser.add_argument(
-        "--use-mlflow",
+        "--no-mlflow",
         help="use mlflow to record metrics",
-        type=bool,
-        default=pkgutil.find_loader("mlflow"),
+        action="store_false",
     )
     train_parser.set_defaults(func=train)
 
     test_parser = subparsers.add_parser("test", help="test the model")
     test_parser.add_argument("configs", type=dir_path, nargs="+")
     test_parser.add_argument(
-        "--use-mlflow",
+        "--no-mlflow",
         help="use mlflow to record metrics",
-        type=bool,
-        default=pkgutil.find_loader("mlflow"),
+        action="store_false",
     )
     test_parser.set_defaults(func=test)
 

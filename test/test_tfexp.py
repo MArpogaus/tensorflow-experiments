@@ -29,7 +29,15 @@ cfg = Configuration(
 
 densenet_cfg_yaml_template_str = """
 seed: &seed 42
-name: mnist-{units}
+
+mlflow:
+  log_artifacts: $base_path
+  log_params:
+    hidden_units: &units {units}
+
+name: &name !join [ mnist-, *units]
+model_checkpoints: !join [ !store [base_path, !abspathjoin [ './logs/', *name]], /mcp]
+
 
 model: !!python/object/apply:tensorflow.keras.models.Sequential
   args:
@@ -37,7 +45,7 @@ model: !!python/object/apply:tensorflow.keras.models.Sequential
       - !!python/object/apply:tensorflow.keras.layers.Flatten
         kwds: {{input_shape: !!python/tuple [28, 28]}}
       - !!python/object/apply:tensorflow.keras.layers.Dense
-        args: [{units}]
+        args: [*units]
         kwds: {{activation: relu}}
       - !!python/object/apply:tensorflow.keras.layers.Dropout
         args: [0.2]
@@ -57,6 +65,19 @@ fit_kwds:
   batch_size: 32
   shuffle: True
   validation_split: 0.1
+  callbacks:
+    - !!python/object/apply:tensorflow.keras.callbacks.ModelCheckpoint
+      kwds:
+        filepath: !join [$base_path, !datetime '/mcp/{{now:%Y%m%d-%H%M%S}}']
+        monitor:  val_loss
+        mode: auto
+        verbose: 0
+        save_best_only: true
+        save_weights_only: true
+    - !!python/object/apply:tensorflow.keras.callbacks.CSVLogger
+        kwds:
+          filename: !join [$base_path, !datetime '/{{now:%Y%m%d-%H%M%S}}.log']
+          append: false
 """
 
 
