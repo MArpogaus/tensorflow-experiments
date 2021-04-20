@@ -104,9 +104,10 @@ def mlflow_tracking(cfg, name):
             mlflow.start_run(run_id=run_id)
         else:
             mlflow.start_run(run_name=cfg.name)
-        child_run = mlflow.start_run(run_name=name, nested=True)
+        child_run = mlflow.start_run(run_name="-".join((cfg.name, name)), nested=True)
         log_cfg(cfg)
         mlflow.autolog(exclusive=False)
+        mlflow.log_param("name", cfg.name)
         log_cfg_values(cfg, ["log_params"])
         try:
             yield child_run
