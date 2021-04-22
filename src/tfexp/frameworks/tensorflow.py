@@ -94,13 +94,13 @@ def fit(model, data, **fit_kwds):
     return history.history
 
 
-def evaluate(model, data, **evaluate_kwds):
-    if isinstance(data["test"], tuple):
+def evaluate(model, data, dataset="test", **evaluate_kwds):
+    if isinstance(data[dataset], tuple):
         # Data format: (test_x, test_y)
-        evaluate_kwds.update(dict(x=data["test"][0], y=data["test"][1]))
+        evaluate_kwds.update(dict(x=data[dataset][0], y=data[dataset][1]))
     else:
         # Data format: dataset / generator or unsupervised
-        evaluate_kwds.update(dict(x=data["test"]))
+        evaluate_kwds.update(dict(x=data[dataset]))
 
     evaluate_kwds["return_dict"] = evaluate_kwds.get("return_dict", True)
     # EVALUATE ################################################################
