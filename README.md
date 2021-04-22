@@ -1,6 +1,6 @@
 # TensorFlow Experiments
 
-A straight-forward framework to run
+A simple framework to run
 [TensorFlow](https://tensorflow.org)
 experiments described in
 [YAML](https://yaml.org/)
@@ -45,8 +45,7 @@ data: !!python/name:tensorflow.python.keras.datasets.mnist
 compile_kwds:
   loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
     kwds: {from_logits: true}
-  metrics:
-  - accuracy
+  metrics: [accuracy]
   optimizer: adam
 
 fit_kwds:
