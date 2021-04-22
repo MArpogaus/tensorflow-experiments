@@ -91,17 +91,17 @@ def cfgs(tmpdir_factory):
     return tmpdir
 
 
-def test_train():
-    tfexp.train(cfg)
+def test_fit():
+    tfexp.fit(cfg)
 
 
-def test_test():
-    tfexp.test(cfg)
+def test_evaluate():
+    tfexp.evaluate(cfg)
 
 
-def test_batch_train(cfgs):
-    tfexp.train(cfgs)
+def test_batch_fit(cfgs):
+    tfexp.fit(cfgs)
 
 
-def test_batch_test(cfgs):
-    tfexp.test(cfgs)
+def test_batch_evaluate(cfgs):
+    tfexp.evaluate(cfgs)

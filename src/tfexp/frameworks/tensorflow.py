@@ -9,9 +9,7 @@ def set_seed(seed):
     tf.random.set_seed(seed)
 
 
-def load_data(cfg, **kwds):
-    data = cfg.data_loader(**{**cfg.data_loader_kwds, **kwds})
-
+def prepare_data(data):
     # DATA FORMAT #########################################################
     if isinstance(data, tuple):
         if len(data) == 1:
@@ -53,58 +51,59 @@ def load_data(cfg, **kwds):
     return data
 
 
-def compile_model(cfg):
-    model = cfg.model
-    model.compile(**cfg.compile_kwds)
+def compile_model(model, **compile_kwds):
+    model.compile(**compile_kwds)
 
     return model
 
 
-def load_checkpoint(cfg, model):
+def load_checkpoint(model, model_checkpoints):
     # ref: https://www.tensorflow.org/tutorials/keras/save_and_load
-    if os.path.exists(cfg.model_checkpoints):
-        if os.path.isfile(cfg.model_checkpoints):
-            cp = cfg.model_checkpoints
+    if os.path.exists(model_checkpoints):
+        if os.path.isfile(model_checkpoints):
+            cp = model_checkpoints
         else:
             # get path to latest checkpoint
-            cp = tf.train.latest_checkpoint(cfg.model_checkpoints)
+            cp = tf.train.latest_checkpoint(model_checkpoints)
 
         # Load model
         if cp is not None:
             print(f"restoring model from checkpoint {cp}")
             model.load_weights(cp)
-    elif cfg.model_checkpoints != "":
-        os.makedirs(cfg.model_checkpoints)
+    elif model_checkpoints != "":
+        os.makedirs(model_checkpoints)
 
     return model
 
 
-def train(cfg, model, data):
+def fit(model, data, **fit_kwds):
     if isinstance(data["train"], tuple):
         # Data format: (train_x, train_y)
-        fit_kwds = dict(
-            x=data["train"][0], y=data["train"][1], validation_data=data["validate"]
+        fit_kwds.update(
+            dict(
+                x=data["train"][0], y=data["train"][1], validation_data=data["validate"]
+            )
         )
     else:
         # Data format: dataset / generator or unsupervised
-        fit_kwds = dict(x=data["train"], validation_data=data["validate"])
+        fit_kwds.update(dict(x=data["train"], validation_data=data["validate"]))
 
     # TRAIN ###################################################################
-    history = model.fit(**fit_kwds, **cfg.fit_kwds)
+    history = model.fit(**fit_kwds)
 
-    return history
+    return history.history
 
 
-def test(cfg, model, data):
+def evaluate(model, data, **evaluate_kwds):
     if isinstance(data["test"], tuple):
         # Data format: (test_x, test_y)
-        evaluate_kwds = dict(x=data["test"][0], y=data["test"][1])
+        evaluate_kwds.update(dict(x=data["test"][0], y=data["test"][1]))
     else:
         # Data format: dataset / generator or unsupervised
-        evaluate_kwds = dict(x=data["test"])
+        evaluate_kwds.update(dict(x=data["test"]))
 
     evaluate_kwds["return_dict"] = evaluate_kwds.get("return_dict", True)
     # EVALUATE ################################################################
-    loss = model.evaluate(**evaluate_kwds, **cfg.evaluate_kwds)
+    loss = model.evaluate(**evaluate_kwds)
 
     return loss

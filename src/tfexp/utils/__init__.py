@@ -120,7 +120,7 @@ def mlflow_tracking(cfg, name):
         yield None
 
 
-def run(cfg, fn, framework, **kwds):
+def run(cfg, fn, framework):
     # CONFIG ##################################################################
     print(cfg)
 
@@ -134,14 +134,16 @@ def run(cfg, fn, framework, **kwds):
 
         # LOAD DATA ###########################################################
         print("Loading data...")
-        data = framework.load_data(cfg)
+        data = cfg.data_loader(**cfg.data_loader_kwds)
+        data = framework.prepare_data(data)
 
         # LOAD MODEL ##########################################################
         print("Loading model...")
-        model = framework.compile_model(cfg)
-        model = framework.load_checkpoint(cfg, model)
+        model = cfg.model
+        model = framework.compile_model(model, **cfg.compile_kwds)
+        model = framework.load_checkpoint(model, cfg.model_checkpoints)
 
-        res = fn(cfg, model, data)
+        res = fn(model, data, **getattr(cfg, fn.__name__ + "_kwds"))
         if active_run:
             log_res(fn.__name__, res)
     return cfg, dict(model=model, data=data, res=res)

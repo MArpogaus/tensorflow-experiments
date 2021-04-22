@@ -32,7 +32,7 @@
 import os
 import argparse
 
-from . import train, test
+from . import fit, evaluate
 
 
 def dir_path(path):
@@ -46,23 +46,23 @@ def cli():
     p = argparse.ArgumentParser(description="Help me to conduct my experiments")
     subparsers = p.add_subparsers()
 
-    train_parser = subparsers.add_parser("train", help="train the model")
-    train_parser.add_argument("configs", type=dir_path, nargs="+")
-    train_parser.add_argument(
+    fit_parser = subparsers.add_parser("fit", help="fit the model")
+    fit_parser.add_argument("configs", type=dir_path, nargs="+")
+    fit_parser.add_argument(
         "--no-mlflow",
         help="use mlflow to record metrics",
         action="store_false",
     )
-    train_parser.set_defaults(func=train)
+    fit_parser.set_defaults(func=fit)
 
-    test_parser = subparsers.add_parser("test", help="test the model")
-    test_parser.add_argument("configs", type=dir_path, nargs="+")
-    test_parser.add_argument(
+    evaluate_parser = subparsers.add_parser("evaluate", help="evaluate the model")
+    evaluate_parser.add_argument("configs", type=dir_path, nargs="+")
+    evaluate_parser.add_argument(
         "--no-mlflow",
         help="use mlflow to record metrics",
         action="store_false",
     )
-    test_parser.set_defaults(func=test)
+    evaluate_parser.set_defaults(func=evaluate)
 
     args = p.parse_args()
     args.func(args)

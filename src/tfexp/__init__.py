@@ -5,7 +5,7 @@
 # author  : Marcel Arpogaus <marcel dot arpogaus at gmail dot com>
 #
 # created : 2021-04-09 12:39:02 (Marcel Arpogaus)
-# changed : 2021-04-12 16:45:06 (Marcel Arpogaus)
+# changed : 2021-04-22 18:03:08 (Marcel Arpogaus)
 # DESCRIPTION #################################################################
 # ...
 # LICENSE #####################################################################
@@ -37,11 +37,11 @@ def get_framework(framework):
         raise (ValueError(f"framework '{framework}' not supported"))
 
 
-def train(args, **kwds):
+def fit(args, **kwds):
     framework = get_framework("tensorflow")
-    return cmd_helper(framework.train, framework, args, **kwds)
+    return cmd_helper(framework.fit, framework, args, **kwds)
 
 
-def test(args, **kwds):
+def evaluate(args, **kwds):
     framework = get_framework("tensorflow")
-    return cmd_helper(framework.test, framework, args, **kwds)
+    return cmd_helper(framework.evaluate, framework, args, **kwds)
