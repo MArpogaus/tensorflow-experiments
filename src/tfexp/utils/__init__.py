@@ -182,4 +182,4 @@ def cmd_helper(cmd, framework, args, **kwds):
     cfg_files = ensure_list(args)
     kwds.update(process_cli_args(args))
     cfgs = cfg_generator(cmd.__name__, cfg_files, **kwds)
-    return dict(map(partial(run, fn=cmd, framework=framework, **kwds), cfgs))
+    return dict(map(partial(run, fn=cmd, framework=framework), cfgs))
