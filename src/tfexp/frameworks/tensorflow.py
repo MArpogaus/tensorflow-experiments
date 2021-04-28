@@ -91,7 +91,7 @@ def fit(model, data, **fit_kwds):
     # TRAIN ###################################################################
     history = model.fit(**fit_kwds)
 
-    return history.history
+    return history
 
 
 def evaluate(model, data, dataset="test", **evaluate_kwds):
