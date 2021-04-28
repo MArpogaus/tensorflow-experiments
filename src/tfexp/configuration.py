@@ -56,7 +56,7 @@ class Configuration:
         self.seed = seed
         self.name = name or model.name
         self.mlflow = mlflow
-        self.mlflow["enable"] = mlflow.get("enable", "mlflow" in sys.modules)
+        self.mlflow["enable"] = mlflow.get("enable", True) and "mlflow" in sys.modules
 
         # MODEL ###############################################################
         self.model = model

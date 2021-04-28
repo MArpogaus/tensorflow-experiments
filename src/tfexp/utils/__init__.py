@@ -32,9 +32,8 @@
 import argparse
 import contextlib
 import io
+import numbers
 import os
-import sys
-import tempfile
 from contextlib import contextmanager
 from functools import partial
 from itertools import starmap
@@ -69,11 +68,7 @@ def load_cfg_from_yaml(cmd, cfg_file, **kwds):
 
 
 def log_cfg(cfg):
-    tmp_dir = tempfile.mkdtemp()
-    tmp_file = os.path.join(tmp_dir, "config.txt")
-    with open(tmp_file, "w+") as f:
-        f.write(repr(cfg))
-    mlflow.log_artifact(tmp_file)
+    mlflow.log_text(repr(cfg), "config.txt")
 
 
 def log_res(key, res, step=None):
@@ -81,7 +76,7 @@ def log_res(key, res, step=None):
         list(starmap(log_res, res.items()))
     elif isinstance(res, list):
         list(starmap(partial(log_res, key), zip(res, range(len(res)))))
-    elif isinstance(res, (int, float)):
+    elif isinstance(res, numbers.Number):
         mlflow.log_metric(key, float(res), step)
     else:
         print(f"Warning: metric type '{type(res)}' unsupported.")
@@ -96,26 +91,24 @@ def log_cfg_values(cfg, keys):
 
 @contextmanager
 def mlflow_tracking(cfg, name):
-    if "mlflow" in sys.modules and cfg.mlflow["enable"]:
-        query = f"tags.mlflow.runName = '{cfg.name}'"
-        results = mlflow.search_runs(filter_string=query, output_format="list")
-        if len(results) > 0:
-            run_id = results[0].info.run_id
-            mlflow.start_run(run_id=run_id)
-        else:
-            mlflow.start_run(run_name=cfg.name)
-        child_run = mlflow.start_run(run_name="-".join((cfg.name, name)), nested=True)
+    if cfg.mlflow["enable"]:
+        experiment_id = None
+        if "experiment_name" in cfg.mlflow.keys():
+            experiment_id = mlflow.set_experiment(cfg.mlflow["experiment_name"])
+        run = mlflow.start_run(
+            run_name="-".join((cfg.name, name)), experiment_id=experiment_id
+        )
         log_cfg(cfg)
         mlflow.autolog(exclusive=False)
         mlflow.log_param("name", cfg.name)
-        log_cfg_values(cfg, ["log_params"])
+        mlflow.set_tag("tfexp_cmd", name)
+        log_cfg_values(cfg, ["log_params", "set_tags"])
         try:
-            yield child_run
+            yield run
         finally:
             log_cfg_values(cfg, ["log_artifacts", "log_artifact"])
 
-            mlflow.end_run()  # child_run
-            mlflow.end_run()  # parent_run
+            mlflow.end_run()
     else:
         yield None
 
