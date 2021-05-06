@@ -7,4 +7,4 @@ entry_points:
   main:
     parameters:
       config_file: path
-    command: "tfexp train {config_file}"
+    command: "tfexp fit {config_file}; tfexp evaluate {config_file}"

@@ -92,14 +92,20 @@ def log_cfg_values(cfg, keys):
 @contextmanager
 def mlflow_tracking(cfg, name):
     if cfg.mlflow["enable"]:
+        run_id = os.environ.get("MLFLOW_RUN_ID", False)
+        if run_id:
+            mlflow.start_run()
+
+        mlflow.autolog()
         experiment_id = None
         if "experiment_name" in cfg.mlflow.keys():
             experiment_id = mlflow.set_experiment(cfg.mlflow["experiment_name"])
         run = mlflow.start_run(
-            run_name="-".join((cfg.name, name)), experiment_id=experiment_id
+            run_name="-".join((cfg.name, name)),
+            experiment_id=experiment_id,
+            nested=mlflow.active_run() is not None,
         )
         log_cfg(cfg)
-        mlflow.autolog(exclusive=False)
         mlflow.log_param("name", cfg.name)
         mlflow.set_tag("tfexp_cmd", name)
         log_cfg_values(cfg, ["log_params", "set_tags"])

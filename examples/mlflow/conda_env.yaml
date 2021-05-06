@@ -8,5 +8,5 @@ dependencies:
   - pip:
       - tensorboard==2.4.1
       - tensorflow==2.4.1
-      - mlflow
+      - mlflow==1.16
       - git+https://github.com/MArpogaus/tensorflow-experiments.git@dev
