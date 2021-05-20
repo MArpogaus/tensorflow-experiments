@@ -58,10 +58,22 @@ def ensure_list(args):
         return [args]
 
 
+# inspired by:https://stackoverflow.com/questions/20656135
+def deep_merge_dicts(d1, d2):
+    res = d1.copy()
+    for key, value in d2.items():
+        if isinstance(value, dict):
+            res[key] = deep_merge_dicts(value, res.setdefault(key, {}))
+        else:
+            res[key] = value
+
+    return res
+
+
 def load_cfg_from_yaml(cmd, cfg_file, **kwds):
     print(f"Reading file: {cfg_file.name}")
     config = yaml.load(cfg_file, Loader=get_loader(cmd))
-    config.update(**kwds)
+    config = deep_merge_dicts(config, kwds)
     cfg = Configuration(**config)
 
     return cfg
