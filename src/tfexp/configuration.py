@@ -32,20 +32,19 @@
 import sys
 from pprint import pformat
 
-import tensorflow as tf
-
 
 class Configuration:
     """This class stores all states required for experiments"""
 
     def __init__(
         self,
-        model: tf.keras.Model,
+        model: callable,
         data_loader: callable,
         seed: int,
         name: str = None,
         mlflow: dict = {},
-        model_checkpoints: str = None,
+        model_checkpoints: str = "",
+        model_kwds: dict = {},
         fit_kwds: dict = {},
         data_loader_kwds: dict = {},
         compile_kwds: dict = {},
@@ -60,7 +59,8 @@ class Configuration:
 
         # MODEL ###############################################################
         self.model = model
-        self.model_checkpoints = model_checkpoints or ""
+        self.model_kwds = model_kwds
+        self.model_checkpoints = model_checkpoints
 
         # DATASET #############################################################
         self.data_loader = data_loader

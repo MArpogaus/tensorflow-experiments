@@ -15,6 +15,8 @@ c: !include inc1/include_var.yaml
 d: $e
 f: !sum [$g, !sum [!include inc2/include_seq.yaml]]
 h: !join [$i, ' ', world]
+i: !pathjoin [a, b, c]
+j: !abspathjoin [a, b, c]
 """
 
 include_var_yaml = """
@@ -33,6 +35,8 @@ expected_dict = {
     "d": 4,
     "f": 14,
     "h": "hello world",
+    "i": "a/b/c",
+    "j": "a/b/c",
 }
 
 switchcmd_yaml = """
@@ -61,6 +65,8 @@ def artificial_data(tmpdir_factory):
 def test_artificial_data(artificial_data):
     with open(artificial_data / "test.yaml") as f:
         d = yaml.load(f, Loader=get_loader(cmd=""))
+
+    expected_dict['j'] = str(artificial_data.join(expected_dict['j']))
 
     assert d == expected_dict, "Fail"
 

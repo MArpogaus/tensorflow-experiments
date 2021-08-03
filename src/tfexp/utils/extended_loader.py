@@ -63,6 +63,7 @@ def get_loader(cmd):
             self.add_constructor("!product", self._np_product_constructor)
             self.add_constructor("!sum", self._np_sum_constructor)
             self.add_constructor("!join", self._join_constructor)
+            self.add_constructor("!pathjoin", self._path_join_constructor)
             self.add_constructor("!abspathjoin", self._abspath_join_constructor)
             self.add_constructor("!include", self._include_constructor)
             self.add_constructor("!switchcmd", self._switchcmd_constructor)
@@ -97,9 +98,14 @@ def get_loader(cmd):
             seq = loader.construct_sequence(node)
             return "".join([str(i) for i in seq])
 
-        def _abspath_join_constructor(self, loader, node):
+        def _path_join_constructor(self, loader, node):
             seq = loader.construct_sequence(node)
-            path = os.path.join(loader._root, *[str(i) for i in seq])
+            path = os.path.join(*seq)
+            return path
+
+        def _abspath_join_constructor(self, loader, node):
+            path = self._path_join_constructor(loader, node)
+            path = os.path.join(loader._root, path)
             return os.path.abspath(path)
 
         def _include_constructor(self, loader, node):

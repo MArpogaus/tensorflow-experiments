@@ -28,7 +28,7 @@
 # limitations under the License.
 ###############################################################################
 
-# REQUIRED PYTHON MODULES #####################################################
+# REQUIRED PYuHON MODULES #####################################################
 import argparse
 import contextlib
 import io
@@ -98,7 +98,11 @@ def log_cfg_values(cfg, keys):
     for k in keys:
         if k in cfg.mlflow.keys():
             log_fn = getattr(mlflow, k)
-            log_fn(cfg.mlflow[k])
+            v = cfg.mlflow[k]
+            if type(v) == list:
+                list(map(log_fn, v))
+            else:
+                log_fn(v)
 
 
 @contextmanager
@@ -150,7 +154,7 @@ def run(cfg, fn, framework):
 
         # LOAD MODEL ##########################################################
         print("Loading model...")
-        model = cfg.model
+        model = cfg.model(**cfg.model_kwds)
         model = framework.compile_model(model, **cfg.compile_kwds)
         model = framework.load_checkpoint(model, cfg.model_checkpoints)
 

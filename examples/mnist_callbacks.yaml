@@ -9,32 +9,33 @@ mlflow:
   set_tags:
     name: *name
 
-model: !!python/object/apply:tensorflow.keras.models.Sequential
-  args:
-    - !!python/list
-      - !!python/object/apply:tensorflow.keras.layers.Flatten
-        kwds: {input_shape: !!python/tuple [28, 28]}
-      - !!python/object/apply:tensorflow.keras.layers.Dense
-        args: [*units]
-        kwds: {activation: relu}
-      - !!python/object/apply:tensorflow.keras.layers.Dropout
-        args: [0.2]
-      - !!python/object/apply:tensorflow.keras.layers.Dense
-        args: [10]
+model: !!python/name:tensorflow.keras.models.Sequential
+model_kwds:
+  layers: !!python/list
+    - !!python/object/apply:tensorflow.keras.layers.Flatten
+      kwds: { input_shape: !!python/tuple [28, 28] }
+    - !!python/object/apply:tensorflow.keras.layers.Dense
+      args: [*units]
+      kwds: { activation: relu }
+    - !!python/object/apply:tensorflow.keras.layers.Dropout
+      args: [0.2]
+    - !!python/object/apply:tensorflow.keras.layers.Dense
+      args: [10]
 
 data_loader: !!python/name:tensorflow.python.keras.datasets.mnist.load_data
 
-model_checkpoints: !join 
-  - !store 
+model_checkpoints: !join
+  - !store
     - base_path
     - !abspathjoin
       - logs
       - *name
-  - '/mcp'
+  - "mcp"
 
 compile_kwds:
-  loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
-    kwds: {from_logits: true}
+  loss:
+    !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
+    kwds: { from_logits: true }
   metrics: [accuracy]
   optimizer: adam
 
@@ -43,6 +44,4 @@ fit_kwds:
   batch_size: 32
   shuffle: True
   validation_split: 0.1
-  callbacks:
-    !include inc/callbacks.yaml
-
+  callbacks: !include inc/callbacks.yaml

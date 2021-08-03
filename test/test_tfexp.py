@@ -9,8 +9,9 @@ import tensorflow as tf
 cfg = Configuration(
     seed=42,
     name="mnist",
-    model=tf.keras.Sequential(
-        [
+    model=tf.keras.Sequential,
+    model_kwds=dict(
+        layers=[
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(128, activation="relu"),
             tf.keras.layers.Dropout(0.5),
@@ -30,18 +31,17 @@ cfg = Configuration(
 densenet_cfg_yaml_template_str = """
 seed: &seed 42
 
+name: &name !join [ mnist-, &units {units}]
+model_checkpoints: !pathjoin [ !store [base_path, !abspathjoin [ 'logs', *name]], mcp]
+
 mlflow:
   log_artifacts: $base_path
   log_params:
-    hidden_units: &units {units}
+    hidden_units: *units
 
-name: &name !join [ mnist-, *units]
-model_checkpoints: !join [ !store [base_path, !abspathjoin [ './logs/', *name]], /mcp]
-
-
-model: !!python/object/apply:tensorflow.keras.models.Sequential
-  args:
-    - !!python/list
+model: !!python/name:tensorflow.keras.models.Sequential
+model_kwds:
+  layers: !!python/list
       - !!python/object/apply:tensorflow.keras.layers.Flatten
         kwds: {{input_shape: !!python/tuple [28, 28]}}
       - !!python/object/apply:tensorflow.keras.layers.Dense
@@ -68,7 +68,7 @@ fit_kwds:
   callbacks:
     - !!python/object/apply:tensorflow.keras.callbacks.ModelCheckpoint
       kwds:
-        filepath: !join [$base_path, !datetime '/mcp/{{now:%Y%m%d-%H%M%S}}']
+        filepath: !pathjoin [$base_path, !datetime 'mcp/{{now:%Y%m%d-%H%M%S}}']
         monitor:  val_loss
         mode: auto
         verbose: 0
@@ -76,7 +76,7 @@ fit_kwds:
         save_weights_only: true
     - !!python/object/apply:tensorflow.keras.callbacks.CSVLogger
         kwds:
-          filename: !join [$base_path, !datetime '/{{now:%Y%m%d-%H%M%S}}.log']
+          filename: !pathjoin [$base_path, !datetime '{{now:%Y%m%d-%H%M%S}}.log']
           append: false
 """
 
