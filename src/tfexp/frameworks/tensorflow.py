@@ -51,8 +51,12 @@ def prepare_data(data):
     return data
 
 
-def compile_model(model, **compile_kwds):
-    model.compile(**compile_kwds)
+def build_and_compile_model(model, model_kwds, compile_kwds):
+    gpus = tf.config.list_logical_devices("GPU")
+    strategy = tf.distribute.MirroredStrategy(gpus)
+    with strategy.scope():
+        model = model(**model_kwds)
+        model.compile(**compile_kwds)
 
     return model
 

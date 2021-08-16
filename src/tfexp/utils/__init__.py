@@ -154,8 +154,7 @@ def run(cfg, fn, framework):
 
         # LOAD MODEL ##########################################################
         print("Loading model...")
-        model = cfg.model(**cfg.model_kwds)
-        model = framework.compile_model(model, **cfg.compile_kwds)
+        model = framework.build_and_compile_model(cfg.model, cfg.model_kwds, cfg.compile_kwds)
         model = framework.load_checkpoint(model, cfg.model_checkpoints)
 
         res = fn(model, data, **getattr(cfg, fn.__name__ + "_kwds"))
