@@ -34,6 +34,8 @@ import contextlib
 import io
 import numbers
 import os
+import tempfile
+import traceback
 from contextlib import contextmanager
 from functools import partial
 from itertools import starmap
@@ -125,12 +127,20 @@ def mlflow_tracking(cfg, name):
         mlflow.log_param("name", cfg.name)
         mlflow.set_tag("tfexp_cmd", name)
         log_cfg_values(cfg, ["log_params", "set_tags"])
+
+        status = "FINISHED"
         try:
             yield run
+        except:
+            with tempfile.NamedTemporaryFile(prefix="traceback", suffix=".txt") as tmpf:
+                with open(tmpf.name, "w+") as f:
+                    f.write(traceback.format_exc())
+                mlflow.log_artifact(tmpf.name)
+            status = "FAILED"
         finally:
             log_cfg_values(cfg, ["log_artifacts", "log_artifact"])
 
-            mlflow.end_run()
+            mlflow.end_run(status=status)
     else:
         yield None
 
