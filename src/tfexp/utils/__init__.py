@@ -120,7 +120,6 @@ def mlflow_tracking(cfg, name):
             experiment_id = mlflow.set_experiment(cfg.mlflow["experiment_name"])
         run = mlflow.start_run(
             run_name="-".join((cfg.name, name)),
-            experiment_id=experiment_id,
             nested=mlflow.active_run() is not None,
         )
         log_cfg(cfg)
