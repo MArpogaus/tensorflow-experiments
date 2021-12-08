@@ -128,18 +128,22 @@ def mlflow_tracking(cfg, name):
         log_cfg_values(cfg, ["log_params", "set_tags"])
 
         status = "FINISHED"
+        exc = None
         try:
             yield run
-        except:
+        except Exception as e:
             with tempfile.NamedTemporaryFile(prefix="traceback", suffix=".txt") as tmpf:
                 with open(tmpf.name, "w+") as f:
                     f.write(traceback.format_exc())
                 mlflow.log_artifact(tmpf.name)
             status = "FAILED"
+            exc = e
         finally:
             log_cfg_values(cfg, ["log_artifacts", "log_artifact"])
 
             mlflow.end_run(status=status)
+            if exc:
+                raise exc
     else:
         yield None
 
