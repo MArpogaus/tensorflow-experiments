@@ -1,10 +1,8 @@
-import tfexp
 import pytest
-
-from tfexp.configuration import Configuration
-
 import tensorflow as tf
 
+import tfexp
+from tfexp.configuration import Configuration
 
 cfg = Configuration(
     seed=42,

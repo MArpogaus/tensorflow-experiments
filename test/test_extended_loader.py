@@ -7,6 +7,7 @@ from functools import partial
 
 import pytest
 import yaml
+
 from tfexp.utils.extended_loader import get_loader
 
 test_yaml = """

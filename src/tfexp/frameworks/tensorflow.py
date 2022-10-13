@@ -1,6 +1,6 @@
 import os
-import tensorflow as tf
 
+import tensorflow as tf
 from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
 from tensorflow.python.data.ops.iterator_ops import Iterator
 
