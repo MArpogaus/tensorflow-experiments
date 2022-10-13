@@ -96,15 +96,18 @@ def log_res(key, res, step=None):
         print(f"Warning: metric type '{type(res)}' unsupported.")
 
 
-def log_cfg_values(cfg, keys):
-    for k in keys:
-        if k in cfg.mlflow.keys():
-            log_fn = getattr(mlflow, k)
-            v = cfg.mlflow[k]
-            if type(v) == list:
-                list(map(log_fn, v))
+def call_mlflow_log_functions(fns):
+    for fn, v in fns.items():
+        log_fn = getattr(mlflow, fn)
+        if isinstance(v, list):
+            list(map(log_fn, v))
+        elif isinstance(v, dict):
+            if "kwds" in v.keys() and v.pop("kwds"):
+                log_fn(**v)
             else:
                 log_fn(v)
+        else:
+            log_fn(v)
 
 
 @contextmanager
@@ -115,9 +118,8 @@ def mlflow_tracking(cfg, name):
             mlflow.start_run()
 
         mlflow.autolog()
-        experiment_id = None
         if "experiment_name" in cfg.mlflow.keys():
-            experiment_id = mlflow.set_experiment(cfg.mlflow["experiment_name"])
+            mlflow.set_experiment(cfg.mlflow["experiment_name"])
         run = mlflow.start_run(
             run_name="-".join((cfg.name, name)),
             nested=mlflow.active_run() is not None,
@@ -125,7 +127,7 @@ def mlflow_tracking(cfg, name):
         log_cfg(cfg)
         mlflow.log_param("name", cfg.name)
         mlflow.set_tag("tfexp_cmd", name)
-        log_cfg_values(cfg, ["log_params", "set_tags"])
+        call_mlflow_log_functions(cfg.mlflow.get("before_run", {}))
 
         status = "FINISHED"
         exc = None
@@ -139,7 +141,7 @@ def mlflow_tracking(cfg, name):
             status = "FAILED"
             exc = e
         finally:
-            log_cfg_values(cfg, ["log_artifacts", "log_artifact"])
+            call_mlflow_log_functions(cfg.mlflow.get("after_run", {}))
 
             mlflow.end_run(status=status)
             if exc:

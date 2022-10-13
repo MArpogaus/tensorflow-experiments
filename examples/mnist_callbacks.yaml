@@ -3,11 +3,13 @@ name: &name mnist_callbacks
 
 mlflow:
   experiment_name: *name
-  log_artifacts: $base_path
-  log_params:
-    hidden_units: &units 128
-  set_tags:
-    name: *name
+  before_run:
+    log_params:
+      hidden_units: &units 128
+    set_tags:
+      name: *name
+  after_run:
+    log_artifacts: $base_path
 
 model: !!python/name:tensorflow.keras.models.Sequential
 model_kwds:
