@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools >= 61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tfexp"
+description = "Small framework to conduct tensorflow experiments, described in YAML files."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Apache License 2.0"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pyyaml >= 5",
+    "tensorflow == 2.8.*"
+]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "tfexp.__version__"}
+
+[project.scripts]
+tfexp = "tfexp.cli:cli"
