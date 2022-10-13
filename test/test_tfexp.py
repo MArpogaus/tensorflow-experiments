@@ -52,7 +52,7 @@ model_kwds:
       - !!python/object/apply:tensorflow.keras.layers.Dense
         args: [10]
 
-data_loader: !!python/name:tensorflow.python.keras.datasets.mnist.load_data
+data_loader: !!python/name:keras.api._v2.keras.datasets.mnist.load_data
 
 compile_kwds:
   loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
