@@ -27,12 +27,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-
 # REQUIRED PYTHON MODULES #####################################################
-import os
 import argparse
+import os
+import signal
+import sys
 
-from . import fit, evaluate
+from . import evaluate, fit
 
 
 def dir_path(path):
@@ -42,9 +43,34 @@ def dir_path(path):
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
+def confirm_prompt(question: str) -> bool:
+    reply = None
+    question_str = f"{question} (y,n): "
+    while reply not in ("y", "n"):
+        reply = input(question_str).lower()
+    return reply == "y"
+
+
+original_sigint = signal.getsignal(signal.SIGINT)
+
+
+def signal_handler(*args):
+    # restore the original signal handler as otherwise evil things will happen
+    # in raw_input when CTRL+C is pressed, and our signal handler is not re-entrant
+    signal.signal(signal.SIGINT, original_sigint)
+
+    if confirm_prompt("Do you want to cancel the running experiment?"):
+        sys.exit(1)
+
+    # restore the exit gracefully handler here
+    signal.signal(signal.SIGINT, signal_handler)
+
+
 def cli():
-    p = argparse.ArgumentParser(description="Help me to conduct my experiments")
-    subparsers = p.add_subparsers()
+    parser = argparse.ArgumentParser(
+        description="Helps you to conduct and track your ml experiments"
+    )
+    subparsers = parser.add_subparsers()
 
     fit_parser = subparsers.add_parser("fit", help="fit the model")
     fit_parser.add_argument("configs", type=dir_path, nargs="+")
@@ -64,5 +90,6 @@ def cli():
     )
     evaluate_parser.set_defaults(func=evaluate)
 
-    args = p.parse_args()
+    signal.signal(signal.SIGINT, signal_handler)
+    args = parser.parse_args()
     args.func(args)
