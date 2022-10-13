@@ -66,7 +66,7 @@ def test_artificial_data(artificial_data):
     with open(artificial_data / "test.yaml") as f:
         d = yaml.load(f, Loader=get_loader(cmd=""))
 
-    expected_dict['j'] = str(artificial_data.join(expected_dict['j']))
+    expected_dict["j"] = str(artificial_data.join(expected_dict["j"]))
 
     assert d == expected_dict, "Fail"
 

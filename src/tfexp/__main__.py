@@ -32,5 +32,5 @@
 from .cli import cli
 
 # SEQUENTIAL CODE #############################################################
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
