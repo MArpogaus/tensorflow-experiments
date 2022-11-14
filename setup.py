@@ -1,4 +1,3 @@
-#!env python3
 # AUTHOR INFORMATION ##########################################################
 # file   : setup.py
 # brief  : [Description]
@@ -29,15 +28,7 @@
 #
 # All Metadata is specified in pyproject.toml
 #
-# CHANGELOG ##################################################################
-# modified by   : Marcel Arpogaus
-# modified time : 2020-04-06 15:25:51
-#  changes made : ...
-# modified by   : Marcel Arpogaus
-# modified time : 2020-03-23 17:32:10
-#  changes made : newly written
 ###############################################################################
-
 # REQUIRED PYTHON MODULES #####################################################
 
 from setuptools import setup

@@ -7,18 +7,41 @@ name = "tfexp"
 description = "Small framework to conduct tensorflow experiments, described in YAML files."
 readme = "README.md"
 requires-python = ">=3.7"
-license = {text = "Apache License 2.0"}
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
 ]
 dependencies = [
     "pyyaml >= 5",
-    "tensorflow == 2.8.*"
+    "tensorflow >= 2.8.*"
 ]
 dynamic = ["version"]
+license = {text = "Apache License 2.0"}
 
-[tool.setuptools.dynamic]
-version = {attr = "tfexp.__version__"}
+[project.optional-dependencies]
+develop = [
+    'autoflake',
+    'black',
+    'isort',
+    'pre-commit',
+    'pytest',
+    'python-lsp-black',
+    'python-lsp-server[all]',
+]
 
 [project.scripts]
 tfexp = "tfexp.cli:cli"
+
+[tool.autoflake]
+check = true
+expand-star-imports = true
+remove-unused-variables = true
+ignore-init-module-imports = true
+remove-all-unused-imports = true
+
+[tool.isort]
+profile = "black"
+
+[tool.setuptools.dynamic]
+version = {attr = "tfexp.__version__"}
