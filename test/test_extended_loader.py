@@ -1,9 +1,7 @@
-#!env python3
 # -*- coding: utf-8 -*-
 
 import io
 import os
-from functools import partial
 
 import pytest
 import yaml

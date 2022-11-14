@@ -12,7 +12,7 @@ files.
 
 Use the
 [pip package manger](https://www.tensorflow.org/install/pip)
-to install the 
+to install the
 
 ```
 $ pip install git+https://github.com/MArpogaus/tensorflow-experiments.git

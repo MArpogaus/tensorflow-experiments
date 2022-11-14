@@ -1,12 +1,12 @@
 name: mnist
 channels:
-  - defaults
-  - conda-forge
+- defaults
+- conda-forge
 dependencies:
-  - python==3.8
-  - pip
-  - pip:
-      - tensorboard==2.4.1
-      - tensorflow==2.4.1
-      - mlflow==1.16
-      - git+https://github.com/MArpogaus/tensorflow-experiments.git@dev
+- python==3.8
+- pip
+- pip:
+  - tensorboard==2.4.1
+  - tensorflow==2.4.1
+  - mlflow==1.16
+  - git+https://github.com/MArpogaus/tensorflow-experiments.git@dev
