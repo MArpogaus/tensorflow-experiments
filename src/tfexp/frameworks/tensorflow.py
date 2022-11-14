@@ -1,3 +1,4 @@
+import logging
 import os
 
 import tensorflow as tf
@@ -68,7 +69,7 @@ def load_checkpoint(model, model_checkpoints):
 
         # Load model
         if cp is not None:
-            print(f"restoring model from checkpoint {cp}")
+            logging.info(f"restoring model from checkpoint {cp}")
             model.load_weights(cp)
     elif model_checkpoints != "":
         os.makedirs(model_checkpoints)

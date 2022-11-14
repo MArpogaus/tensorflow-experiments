@@ -1,4 +1,3 @@
-#!env python3
 # AUTHOR INFORMATION ##########################################################
 # file    : cli.py
 # brief   : [Description]
@@ -29,6 +28,7 @@
 ###############################################################################
 # REQUIRED PYTHON MODULES #####################################################
 import argparse
+import logging
 import os
 import signal
 import sys
@@ -60,6 +60,7 @@ def signal_handler(*args):
     signal.signal(signal.SIGINT, original_sigint)
 
     if confirm_prompt("Do you want to cancel the running experiment?"):
+        logging.info("Exiting due to user interrupt")
         sys.exit(1)
 
     # restore the exit gracefully handler here
@@ -70,6 +71,13 @@ def cli():
     parser = argparse.ArgumentParser(
         description="Helps you to conduct and track your ml experiments"
     )
+    parser.add_argument(
+        "--log-file",
+        type=argparse.FileType("a"),
+        help="Path to logfile",
+    )
+    parser.add_argument("--log-level", default="info", help="Provide logging level.")
+
     subparsers = parser.add_subparsers()
 
     fit_parser = subparsers.add_parser("fit", help="fit the model")
@@ -92,4 +100,18 @@ def cli():
 
     signal.signal(signal.SIGINT, signal_handler)
     args = parser.parse_args()
+
+    handlers = [
+        logging.StreamHandler(sys.stdout),
+    ]
+
+    if args.log_file is not None:
+        handlers += [logging.StreamHandler(args.log_file)]
+    # Configure logging
+    logging.basicConfig(
+        level=args.log_level.upper(),
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=handlers,
+    )
+
     args.func(args)

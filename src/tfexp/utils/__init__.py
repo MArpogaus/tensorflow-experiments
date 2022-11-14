@@ -1,4 +1,3 @@
-#!env python3
 # AUTHOR INFORMATION ##########################################################
 # file    : __init__.py
 # brief   : [Description]
@@ -27,11 +26,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-
-# REQUIRED PYuHON MODULES #####################################################
+# REQUIRED PYTHON MODULES #####################################################
 import argparse
 import contextlib
 import io
+import logging
 import numbers
 import os
 import tempfile
@@ -45,12 +44,13 @@ import yaml
 try:
     import mlflow
 except ImportError:
-    print("Warning: package 'mlflow' is not installed")
+    logging.info("Warning: package 'mlflow' is not installed")
 
 from ..configuration import Configuration
 from .extended_loader import get_loader
 
 
+# FUNCTION DEFINITIONS #######################################################
 def ensure_list(args):
     if isinstance(args, list):
         return args
@@ -60,7 +60,7 @@ def ensure_list(args):
         return [args]
 
 
-# inspired by:https://stackoverflow.com/questions/20656135
+# inspired by: https://stackoverflow.com/questions/20656135
 def deep_merge_dicts(d1, d2):
     res = d1.copy()
     for key, value in d2.items():
@@ -73,7 +73,7 @@ def deep_merge_dicts(d1, d2):
 
 
 def load_cfg_from_yaml(cmd, cfg_file, **kwds):
-    print(f"Reading file: {cfg_file.name}")
+    logging.info(f"Reading file: {cfg_file.name}")
     config = yaml.load(cfg_file, Loader=get_loader(cmd))
     config = deep_merge_dicts(config, kwds)
     cfg = Configuration(**config)
@@ -93,7 +93,7 @@ def log_res(key, res, step=None):
     elif isinstance(res, numbers.Number):
         mlflow.log_metric(key, float(res), step)
     else:
-        print(f"Warning: metric type '{type(res)}' unsupported.")
+        logging.info(f"Warning: metric type '{type(res)}' unsupported.")
 
 
 def call_mlflow_log_functions(fns):
@@ -152,23 +152,23 @@ def mlflow_tracking(cfg, name):
 
 def run(cfg, fn, framework):
     # CONFIG ##################################################################
-    print(cfg)
+    logging.info(cfg)
 
     # MLFLOW ##################################################################
     with mlflow_tracking(cfg, fn.__name__) as active_run:
 
         # SEED ################################################################
         # Set seed to ensure reproducibility
-        print(f"Setting random seed to: {cfg.seed}")
+        logging.info(f"Setting random seed to: {cfg.seed}")
         framework.set_seed(cfg.seed)
 
         # LOAD DATA ###########################################################
-        print("Loading data...")
+        logging.info("Loading data...")
         data = cfg.data_loader(**cfg.data_loader_kwds)
         data = framework.prepare_data(data)
 
         # LOAD MODEL ##########################################################
-        print("Loading model...")
+        logging.info("Loading model...")
         model = cfg.model(**cfg.model_kwds)
         model = framework.compile_model(model, **cfg.compile_kwds)
         model = framework.load_checkpoint(model, cfg.model_checkpoints)
