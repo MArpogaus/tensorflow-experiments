@@ -41,13 +41,19 @@ from itertools import starmap
 
 import yaml
 
+from ..configuration import Configuration
+from .extended_loader import get_loader
+
+
+# PRIVATE VARIABLES ###########################################################
+__LOGGER__ = logging.getLogger(__name__)
+
+
+# IMPORT MLFLOW ###############################################################
 try:
     import mlflow
 except ImportError:
-    logging.info("Warning: package 'mlflow' is not installed")
-
-from ..configuration import Configuration
-from .extended_loader import get_loader
+    logging.warn("Warning: package 'mlflow' is not installed")
 
 
 # FUNCTION DEFINITIONS #######################################################
@@ -73,7 +79,7 @@ def deep_merge_dicts(d1, d2):
 
 
 def load_cfg_from_yaml(cmd, cfg_file, **kwds):
-    logging.info(f"Reading file: {cfg_file.name}")
+    __LOGGER__.info(f"Reading file: {cfg_file.name}")
     config = yaml.load(cfg_file, Loader=get_loader(cmd))
     config = deep_merge_dicts(config, kwds)
     cfg = Configuration(**config)
@@ -93,7 +99,7 @@ def log_res(key, res, step=None):
     elif isinstance(res, numbers.Number):
         mlflow.log_metric(key, float(res), step)
     else:
-        logging.info(f"Warning: metric type '{type(res)}' unsupported.")
+        __LOGGER__.info(f"Warning: metric type '{type(res)}' unsupported.")
 
 
 def call_mlflow_log_functions(fns):
@@ -152,23 +158,22 @@ def mlflow_tracking(cfg, name):
 
 def run(cfg, fn, framework):
     # CONFIG ##################################################################
-    logging.info(cfg)
+    __LOGGER__.info(cfg)
 
     # MLFLOW ##################################################################
     with mlflow_tracking(cfg, fn.__name__) as active_run:
-
         # SEED ################################################################
         # Set seed to ensure reproducibility
-        logging.info(f"Setting random seed to: {cfg.seed}")
+        __LOGGER__.info(f"Setting random seed to: {cfg.seed}")
         framework.set_seed(cfg.seed)
 
         # LOAD DATA ###########################################################
-        logging.info("Loading data...")
+        __LOGGER__.info("Loading data...")
         data = cfg.data_loader(**cfg.data_loader_kwds)
         data = framework.prepare_data(data)
 
         # LOAD MODEL ##########################################################
-        logging.info("Loading model...")
+        __LOGGER__.info("Loading model...")
         model = cfg.model(**cfg.model_kwds)
         model = framework.compile_model(model, **cfg.compile_kwds)
         model = framework.load_checkpoint(model, cfg.model_checkpoints)

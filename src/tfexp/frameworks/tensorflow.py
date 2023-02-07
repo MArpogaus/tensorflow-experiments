@@ -5,7 +5,11 @@ import tensorflow as tf
 from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
 from tensorflow.python.data.ops.iterator_ops import Iterator
 
+# PRIVATE VARIABLES ###########################################################
+__LOGGER__ = logging.getLogger(__name__)
 
+
+# PUBLIC FUNCTIONS ############################################################
 def set_seed(seed):
     tf.random.set_seed(seed)
 
@@ -69,7 +73,7 @@ def load_checkpoint(model, model_checkpoints):
 
         # Load model
         if cp is not None:
-            logging.info(f"restoring model from checkpoint {cp}")
+            __LOGGER__.info(f"restoring model from checkpoint {cp}")
             model.load_weights(cp)
     elif model_checkpoints != "":
         os.makedirs(model_checkpoints)

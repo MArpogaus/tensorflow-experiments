@@ -36,14 +36,20 @@ import sys
 from . import evaluate, fit
 
 
-def dir_path(path):
+# PRIVATE VARIABLES ###########################################################
+__LOGGER__ = logging.getLogger(__name__)
+__ORIGINAL_SIGINT__ = signal.getsignal(signal.SIGINT)
+
+
+# PRIVATE FUNCTIONS ###########################################################
+def _dir_path(path):
     if os.path.exists(path):
         return path
     else:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def confirm_prompt(question: str) -> bool:
+def _confirm_prompt(question: str) -> bool:
     reply = None
     question_str = f"{question} (y,n): "
     while reply not in ("y", "n"):
@@ -51,22 +57,20 @@ def confirm_prompt(question: str) -> bool:
     return reply == "y"
 
 
-original_sigint = signal.getsignal(signal.SIGINT)
-
-
-def signal_handler(*args):
+def _signal_handler(*args):
     # restore the original signal handler as otherwise evil things will happen
     # in raw_input when CTRL+C is pressed, and our signal handler is not re-entrant
-    signal.signal(signal.SIGINT, original_sigint)
+    signal.signal(signal.SIGINT, __ORIGINAL_SIGINT__)
 
-    if confirm_prompt("Do you want to cancel the running experiment?"):
-        logging.info("Exiting due to user interrupt")
+    if _confirm_prompt("Do you want to cancel the running experiment?"):
+        __LOGGER__.info("Exiting due to user interrupt")
         sys.exit(1)
 
     # restore the exit gracefully handler here
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
 
 
+# PUBLIC FUNCTIONS ############################################################
 def cli():
     parser = argparse.ArgumentParser(
         description="Helps you to conduct and track your ml experiments"
@@ -81,7 +85,7 @@ def cli():
     subparsers = parser.add_subparsers()
 
     fit_parser = subparsers.add_parser("fit", help="fit the model")
-    fit_parser.add_argument("configs", type=dir_path, nargs="+")
+    fit_parser.add_argument("configs", type=_dir_path, nargs="+")
     fit_parser.add_argument(
         "--no-mlflow",
         help="use mlflow to record metrics",
@@ -90,7 +94,7 @@ def cli():
     fit_parser.set_defaults(func=fit)
 
     evaluate_parser = subparsers.add_parser("evaluate", help="evaluate the model")
-    evaluate_parser.add_argument("configs", type=dir_path, nargs="+")
+    evaluate_parser.add_argument("configs", type=_dir_path, nargs="+")
     evaluate_parser.add_argument(
         "--no-mlflow",
         help="use mlflow to record metrics",
@@ -98,7 +102,7 @@ def cli():
     )
     evaluate_parser.set_defaults(func=evaluate)
 
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
     args = parser.parse_args()
 
     handlers = [
@@ -107,6 +111,7 @@ def cli():
 
     if args.log_file is not None:
         handlers += [logging.StreamHandler(args.log_file)]
+
     # Configure logging
     logging.basicConfig(
         level=args.log_level.upper(),
