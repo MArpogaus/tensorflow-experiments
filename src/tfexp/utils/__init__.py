@@ -52,8 +52,10 @@ __LOGGER__ = logging.getLogger(__name__)
 # IMPORT MLFLOW ###############################################################
 try:
     import mlflow
+
+    __MLFLOW_AVAILABLE__ = True
 except ImportError:
-    logging.warn("Warning: package 'mlflow' is not installed")
+    __MLFLOW_AVAILABLE__ = False
 
 
 # FUNCTION DEFINITIONS #######################################################
@@ -118,41 +120,53 @@ def call_mlflow_log_functions(fns):
 
 @contextmanager
 def mlflow_tracking(cfg, name):
-    if cfg.mlflow["enable"]:
-        run_id = os.environ.get("MLFLOW_RUN_ID", False)
-        if run_id:
-            mlflow.start_run()
+    if cfg.mlflow.get("enable", False):
+        __LOGGER__.debug("mlflow tracking enabled")
+        if __MLFLOW_AVAILABLE__:
+            __LOGGER__.info("Starting mlflow tracking")
+            run_id = os.environ.get("MLFLOW_RUN_ID", False)
+            if run_id:
+                mlflow.start_run()
 
-        mlflow.autolog()
-        if "experiment_name" in cfg.mlflow.keys():
-            mlflow.set_experiment(cfg.mlflow["experiment_name"])
-        run = mlflow.start_run(
-            run_name="-".join((cfg.name, name)),
-            nested=mlflow.active_run() is not None,
-        )
-        log_cfg(cfg)
-        mlflow.log_param("name", cfg.name)
-        mlflow.set_tag("tfexp_cmd", name)
-        call_mlflow_log_functions(cfg.mlflow.get("before_run", {}))
+            mlflow.autolog()
+            if "experiment_name" in cfg.mlflow.keys():
+                mlflow.set_experiment(cfg.mlflow["experiment_name"])
+            run = mlflow.start_run(
+                run_name="-".join((cfg.name, name)),
+                nested=mlflow.active_run() is not None,
+            )
+            log_cfg(cfg)
+            mlflow.log_param("name", cfg.name)
+            mlflow.set_tag("tfexp_cmd", name)
+            call_mlflow_log_functions(cfg.mlflow.get("before_run", {}))
 
-        status = "FINISHED"
-        exc = None
-        try:
-            yield run
-        except Exception as e:
-            with tempfile.NamedTemporaryFile(prefix="traceback", suffix=".txt") as tmpf:
-                with open(tmpf.name, "w+") as f:
-                    f.write(traceback.format_exc())
-                mlflow.log_artifact(tmpf.name)
-            status = "FAILED"
-            exc = e
-        finally:
-            call_mlflow_log_functions(cfg.mlflow.get("after_run", {}))
+            status = "FINISHED"
+            exc = None
+            try:
+                yield run
+            except Exception as e:
+                with tempfile.NamedTemporaryFile(
+                    prefix="traceback", suffix=".txt"
+                ) as tmpf:
+                    with open(tmpf.name, "w+") as f:
+                        f.write(traceback.format_exc())
+                    mlflow.log_artifact(tmpf.name)
+                status = "FAILED"
+                exc = e
+            finally:
+                call_mlflow_log_functions(cfg.mlflow.get("after_run", {}))
 
-            mlflow.end_run(status=status)
-            if exc:
-                raise exc
+                mlflow.end_run(status=status)
+                __LOGGER__.info("Finished mlflow tracking")
+                if exc:
+                    raise exc
+        else:
+            __LOGGER__.warn(
+                "mlflow tracking enabled, but package 'mlflow' is not installed"
+            )
+            yield None
     else:
+        __LOGGER__.debug("mlflow tracking disabled")
         yield None
 
 

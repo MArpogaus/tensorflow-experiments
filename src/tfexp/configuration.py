@@ -26,9 +26,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-
 # REQUIRED PYTHON MODULES #####################################################
-import sys
 from pprint import pformat
 
 
@@ -49,12 +47,10 @@ class Configuration:
         compile_kwds: dict = {},
         evaluate_kwds: dict = {},
     ):
-
         # COMMON ##############################################################
         self.seed = seed
         self.name = name or model.name
         self.mlflow = mlflow
-        self.mlflow["enable"] = mlflow.get("enable", True) and "mlflow" in sys.modules
 
         # MODEL ###############################################################
         self.model = model
@@ -65,7 +61,7 @@ class Configuration:
         self.data_loader = data_loader
         self.data_loader_kwds = data_loader_kwds
 
-        # KERAS ###############################################################
+        # KWDS ################################################################
         self.fit_kwds = fit_kwds
         self.compile_kwds = compile_kwds
         self.evaluate_kwds = evaluate_kwds
