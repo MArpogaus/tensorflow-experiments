@@ -10,7 +10,7 @@ classifiers = [
 ]
 dependencies = [
   "pyyaml >= 5",
-  "tensorflow >= 2.8.*"
+  "tensorflow >= 2.8"
 ]
 description = "Small framework to conduct tensorflow experiments, described in YAML files."
 dynamic = ["version"]
