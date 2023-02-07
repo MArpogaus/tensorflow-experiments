@@ -11,7 +11,7 @@ mlflow:
   after_run:
     log_artifacts: $base_path
 
-model: !%21python/name:tensorflow.keras.models.Sequential
+model: !!python/name:tensorflow.keras.models.Sequential
 model_kwds:
   layers: !!python/list
   - !!python/object/apply:tensorflow.keras.layers.Flatten
@@ -23,7 +23,7 @@ model_kwds:
     args: [0.2]
   - !!python/object/apply:tensorflow.keras.layers.Dense
     args: [10]
-data_loader: !%21python/name:keras.api._v2.keras.datasets.mnist.load_data
+data_loader: !!python/name:keras.api._v2.keras.datasets.mnist.load_data
 
 model_checkpoints: !join
 - !store
