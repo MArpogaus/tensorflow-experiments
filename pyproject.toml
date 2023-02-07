@@ -1,44 +1,48 @@
 [build-system]
-requires = ["setuptools >= 61.0.0"]
 build-backend = "setuptools.build_meta"
+requires = ["setuptools >= 61.0.0"]
 
 [project]
-name = "tfexp"
-description = "Small framework to conduct tensorflow experiments, described in YAML files."
-readme = "README.md"
-requires-python = ">=3.7"
 classifiers = [
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9"
 ]
 dependencies = [
-    "pyyaml >= 5",
-    "tensorflow >= 2.8.*"
+  "pyyaml >= 5",
+  "tensorflow >= 2.8.*"
 ]
+description = "Small framework to conduct tensorflow experiments, described in YAML files."
 dynamic = ["version"]
 license = {text = "Apache License 2.0"}
+name = "tfexp"
+readme = "README.md"
+requires-python = ">=3.7"
 
 [project.optional-dependencies]
 develop = [
-    'autoflake',
-    'black',
-    'isort',
-    'pre-commit',
-    'pytest',
-    'python-lsp-black',
-    'python-lsp-server[all]',
+  'autoflake',
+  'black',
+  'isort',
+  'pre-commit',
+  'pytest',
+  'python-lsp-black',
+  'python-lsp-server[all]',
+  'tox'
 ]
 
 [project.scripts]
 tfexp = "tfexp.cli:cli"
 
 [tool.autoflake]
-check = true
 expand-star-imports = true
-remove-unused-variables = true
 ignore-init-module-imports = true
 remove-all-unused-imports = true
+remove-unused-variables = true
+
+[tool.black]
+# line-length = 88
+target-version = ['py38']
 
 [tool.isort]
 profile = "black"
