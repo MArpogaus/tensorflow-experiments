@@ -4,7 +4,7 @@
 # author  : Marcel Arpogaus <marcel dot arpogaus at gmail dot com>
 #
 # created : 2021-04-09 12:39:02 (Marcel Arpogaus)
-# changed : 2022-10-13 11:12:21 (Marcel Arpogaus)
+# changed : 2023-01-26 17:01:07 (Marcel Arpogaus)
 # DESCRIPTION #################################################################
 # ...
 # LICENSE #####################################################################
@@ -27,8 +27,10 @@ import importlib
 
 from .utils import cmd_helper
 
+
 # GLOBAL VARIABLES ############################################################
 __version__ = "0.1"
+
 
 # FUNCTION DEFINITIONS ########################################################
 def get_framework(framework):

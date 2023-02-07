@@ -53,7 +53,8 @@ model_kwds:
 data_loader: !!python/name:keras.api._v2.keras.datasets.mnist.load_data
 
 compile_kwds:
-  loss: !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
+  loss:
+    !!python/object/apply:tensorflow.python.keras.losses.SparseCategoricalCrossentropy
     kwds: {{from_logits: true}}
   metrics: [accuracy]
   optimizer: adam
