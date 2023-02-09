@@ -44,7 +44,6 @@ import yaml
 from ..configuration import Configuration
 from .extended_loader import get_loader
 
-
 # PRIVATE VARIABLES ###########################################################
 __LOGGER__ = logging.getLogger(__name__)
 

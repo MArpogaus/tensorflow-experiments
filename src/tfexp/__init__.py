@@ -27,7 +27,6 @@ import importlib
 
 from .utils import cmd_helper
 
-
 # GLOBAL VARIABLES ############################################################
 __version__ = "0.1"
 

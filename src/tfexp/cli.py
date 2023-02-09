@@ -35,7 +35,6 @@ import sys
 
 from . import evaluate, fit
 
-
 # PRIVATE VARIABLES ###########################################################
 __LOGGER__ = logging.getLogger(__name__)
 __ORIGINAL_SIGINT__ = signal.getsignal(signal.SIGINT)
