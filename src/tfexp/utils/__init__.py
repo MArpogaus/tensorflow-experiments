@@ -103,23 +103,28 @@ def log_res(key, res, step=None):
         __LOGGER__.info(f"Warning: metric type '{type(res)}' unsupported.")
 
 
-def call_mlflow_log_functions(fns):
-    for fn, v in fns.items():
-        log_fn = getattr(mlflow, fn)
-        if isinstance(v, list):
-            list(map(log_fn, v))
-        elif isinstance(v, dict):
-            if "kwds" in v.keys() and v.pop("kwds"):
-                log_fn(**v)
-            else:
-                log_fn(v)
+def call_mlflow_log_function(fn, args):
+    log_fn = getattr(mlflow, fn)
+    if isinstance(args, list):
+        for arg in args:
+            call_mlflow_log_function(fn, arg)
+    elif isinstance(args, dict):
+        if args.pop("kwds", False):
+            log_fn(**args)
         else:
-            log_fn(v)
+            log_fn(args)
+    else:
+        log_fn(args)
+
+
+def call_mlflow_log_functions(fns):
+    for fn, args in fns.items():
+        call_mlflow_log_function(fn, args)
 
 
 @contextmanager
 def mlflow_tracking(cfg, name):
-    if cfg.mlflow.get("enable", False):
+    if cfg.mlflow.get("enable", __MLFLOW_AVAILABLE__):
         __LOGGER__.debug("mlflow tracking enabled")
         if __MLFLOW_AVAILABLE__:
             __LOGGER__.info("Starting mlflow tracking")
